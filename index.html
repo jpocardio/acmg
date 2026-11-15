@@ -68,7 +68,11 @@ button{font:inherit;color:inherit}
 .code.b{color:var(--muted)}
 .lbl{font-size:11.5px;color:var(--fg);min-width:0}
 .crit.nr .code,.crit.nr .lbl{opacity:.55}
-.crit.nr .lbl::after{content:" · no rec. cardio";font-size:10px;color:var(--muted)}
+.crit.nr .lbl::after{content:var(--nr-txt," · no rec. cardio");font-size:10px;color:var(--muted)}
+.seg{display:inline-flex}
+.seg .btn{border-radius:0;padding:3px 6px}
+.seg .btn:first-child{border-radius:4px 0 0 4px}
+.seg .btn:last-child{border-radius:0 4px 4px 0;margin-left:-1px}
 .crit.blocked .lbl{text-decoration:line-through;text-decoration-color:var(--muted)}
 .chips{display:flex;gap:2px}
 .chip{font:600 10.5px var(--f-code);min-width:30px;padding:2px 3px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--muted);cursor:pointer}
@@ -114,15 +118,16 @@ kbd{font:10px var(--f-code);border:1px solid var(--line);border-radius:3px;paddi
   <div class="brand">ACMG<small>Tavtigian · cardio</small></div>
   <div class="result"><span class="cls" id="cls" data-c="none">—</span><span class="pts" id="pts">0 pts</span></div>
   <div class="outs">
-    <div class="out"><input id="outShort" readonly aria-label="Resultado corto para copiar"><button class="btn" id="cpShort" type="button">Copiar</button></div>
-    <div class="out long"><input id="outLong" readonly aria-label="Resultado largo para copiar"><button class="btn" id="cpLong" type="button">Copiar</button><button class="btn" id="lang" type="button" title="Idioma de la línea larga">ES</button></div>
+    <div class="out"><input id="outShort" readonly data-i18n-aria="ariaShort"><button class="btn" id="cpShort" type="button" data-i18n="copy">Copiar</button></div>
+    <div class="out long"><input id="outLong" readonly data-i18n-aria="ariaLong"><button class="btn" id="cpLong" type="button" data-i18n="copy">Copiar</button></div>
   </div>
-  <div class="quick"><input id="quick" placeholder="Teclea: pvs1 pm2_sup ps3_mod … ↵  ( / para venir aquí)" aria-label="Entrada rápida de criterios" autocomplete="off" spellcheck="false"></div>
-  <input class="varin" id="variant" placeholder="Variante (opcional): gen · hg38 · c. · p." aria-label="Variante" autocomplete="off">
+  <div class="quick"><input id="quick" data-i18n-ph="quickPh" data-i18n-aria="ariaQuick" autocomplete="off" spellcheck="false"></div>
+  <input class="varin" id="variant" data-i18n-ph="variantPh" data-i18n-aria="ariaVariant" autocomplete="off">
   <div class="tools">
-    <button class="btn" id="guideBtn" type="button" title="Muestra la explicación de cada criterio">Guía</button>
-    <button class="btn" id="nrBtn" type="button" title="Oculta los no recomendados en cardio">Ocultar no rec.</button>
-    <button class="btn" id="clear" type="button">Limpiar</button>
+    <button class="btn" id="guideBtn" type="button" data-i18n="guide" data-i18n-title="guideTitle">Guía</button>
+    <button class="btn" id="nrBtn" type="button" data-i18n="hideNr" data-i18n-title="hideNrTitle">Ocultar no rec.</button>
+    <button class="btn" id="clear" type="button" data-i18n="clear">Limpiar</button>
+    <span class="seg" role="group" aria-label="Idioma / Language"><button class="btn" type="button" data-lang="es">ES</button><button class="btn" type="button" data-lang="en">EN</button></span>
   </div>
 </header>
 
@@ -132,7 +137,7 @@ kbd{font:10px var(--f-code);border:1px solid var(--line);border-radius:3px;paddi
   <div class="col" id="c3"></div>
   <div class="col" id="c4">
     <section class="blk">
-      <h3>Recuento</h3>
+      <h3 data-i18n="tallyH">Recuento</h3>
       <div class="tally" id="tally"></div>
       <div class="scale" id="scale"></div>
       <div class="scale-n"><span>≤ −7</span><span>0</span><span>≥ 10</span></div>
@@ -140,12 +145,11 @@ kbd{font:10px var(--f-code);border:1px solid var(--line);border-radius:3px;paddi
       <div class="flash" id="flash" role="status"></div>
     </section>
     <section class="blk">
-      <h3>Detalle</h3>
-      <div class="detail" id="detail"><p class="hint">Pulsa <b>?</b> en un criterio para ver su definición, umbrales y referencia. Pulsa el código para marcarlo con su fuerza por defecto (borde marcado), o elige otra fuerza en sus botones.</p>
-      <p class="hint">Atajos: <kbd>/</kbd> entrada rápida · <kbd>Esc</kbd> sale · <kbd>Alt</kbd>+<kbd>C</kbd> copia la línea corta · <kbd>Alt</kbd>+<kbd>L</kbd> limpia.</p></div>
+      <h3 data-i18n="detailH">Detalle</h3>
+      <div class="detail" id="detail"></div>
     </section>
     <section class="blk refs">
-      Puntos (Tavtigian 2020): VS 8 · S 4 · M 2 · Sup 1; benignas −4 / −2 / −1; stand-alone = Benign. Clases: P ≥ 10 · LP 6–9 · Hot-VUS 4–5 · VUS 0–3 · LB −1 a −6 · B ≤ −7.
+      <span data-i18n="refsPts">Puntos (Tavtigian 2020): VS 8 · S 4 · M 2 · Sup 1; benignas −4 / −2 / −1; stand-alone = Benign. Clases: P ≥ 10 · LP 6–9 · Hot-VUS 4–5 · VUS 0–3 · LB −1 a −6 · B ≤ −7.</span>
       Richards 2015 · Tavtigian 2018/2020 · Kelly 2018 (MYH7 VCEP) · Abou Tayoun 2018 (PVS1) · Brnich 2020 (PS3/BS3) · Pejaver 2022 (PP3/BP4) · Walker 2023 (splicing) · ClinGen SVI (PM2, PM3, PS2/PM6).
     </section>
   </div>
@@ -154,6 +158,10 @@ kbd{font:10px var(--f-code);border:1px solid var(--line);border-radius:3px;paddi
 <script id="acmg-engine">
 /* ENGINE START */
 const ACMGEngine = (() => {
+  let LANG = "es";
+  const L = (es, en) => (LANG === "en" ? en : es);
+  const setLang = (l) => { LANG = l === "en" ? "en" : "es"; };
+  const getLang = () => LANG;
   const LEVELS = {
     VS: { pts: 8, chip: "VS", suf: "vst", long: "Very_Strong" },
     S:  { pts: 4, chip: "Str", suf: "str", long: "Strong" },
@@ -207,19 +215,54 @@ const ACMGEngine = (() => {
     C("BP2", "otros", null, ["P"], "P", "En trans con P (AD) / en cis con P", "En trans con una patogénica en un gen dominante de penetrancia completa, o en cis con una patogénica en cualquier herencia. En cardio hay dobles portadores con fenotipo más grave: no se recomienda.", ["P"]),
     C("BP5", "otros", null, ["P"], "P", "Caso con otra explicación molecular", "En un caso con otra causa molecular. En cardio la enfermedad puede ser oligogénica y dosis-dependiente: no se recomienda.", ["P"]),
   ];
+  // Textos en inglés por código: [corto, guía]. Los de español van en C().
+  const EN = {
+    PM2: ["Absent / FAF < 0.00004 (grpmax)", "Absent or extremely rare in population controls (gnomAD, FAF grpmax < 0.00004 in the local sheet; cardiomyopathy VCEP threshold for MYH7). ClinGen SVI (2020): PM2 is applied at Supporting only."],
+    BS1: ["FAF > 0.0001 (grpmax)", "Allele frequency greater than expected for the disorder. Local sheet threshold: FAF grpmax > 0.0001. The threshold depends on prevalence, penetrance and heterogeneity (compute it per gene if needed)."],
+    BA1: ["FAF > 0.001 (grpmax)", "Allele frequency > 0.1% (FAF grpmax) in the population: benign stand-alone. Watch for known pathogenic founder variants (e.g. TTR p.(Val142Ile)), which ClinGen SVI exempts from BA1."],
+    PS4: ["≥15 / ≥6 / ≥2 probands or OR", "Prevalence in affected individuals significantly higher than in controls. By proband count (cardiomyopathy VCEP, MYH7): Strong ≥ 15, Moderate ≥ 6, Supporting ≥ 2. By case-control: significant OR (95% CI > 1) → Strong."],
+    BS2: ["Observed in a healthy adult", "Observed in a healthy adult for a disorder with full penetrance at an early age. Cardiomyopathies show incomplete, age-dependent penetrance: not recommended."],
+    PP1: ["≥7 / ≥5 / ≥3 meioses", "Co-segregation with disease in multiple affected relatives. Strong ≥ 7 informative meioses, Moderate ≥ 5, Supporting ≥ 3 (cardiomyopathy VCEP; equivalent to LOD ≈ 2.1 / 1.5 / 0.9)."],
+    BS4: ["Non-segregation (≥2 affected)", "Lack of segregation in affected family members. Beware of phenocopies and incomplete penetrance (an unaffected carrier is not non-segregation)."],
+    PS2: ["De novo, parentage confirmed", "De novo with maternity and paternity confirmed, in a patient with the disease and no family history. Strength comes from the ClinGen SVI point system (v1.1), by number of cases and phenotype specificity."],
+    PM6: ["Assumed de novo (unconfirmed)", "Assumed de novo, without confirmation of maternity and paternity. Same SVI point scale as PS2; a given case counts under PS2 or PM6, not both."],
+    PVS1: ["Null in a gene where LoF is the mechanism", "Null variant (nonsense, frameshift, canonical ±1/2 splice, initiation codon, multi-exon deletion) in a gene where LoF is a known disease mechanism. Strength from the Abou Tayoun 2018 decision tree (NMD, last exon, critical region, exon in a relevant isoform). RNA data showing a LoF transcript: PVS1 at its strength (Walker 2023)."],
+    PS1: ["Same AA change as an established P", "Same amino acid change as an established pathogenic variant, through a different nucleotide change. Walker 2023 extends it to splicing: a variant with the same predicted splicing effect as a known P variant (same position). Never together with PVS1."],
+    PM5: ["Different AA at a residue with known P", "Novel missense at a residue where a different missense is pathogenic. Supporting if the reference variant is only LP or the change is less severe by Grantham."],
+    PP2: ["Missense in gene with little benign missense", "Missense in a gene with a low rate of benign missense variation and where missense is a common disease mechanism."],
+    BP1: ["Missense in gene with truncating mechanism", "Missense in a gene where only truncating variants cause disease."],
+    BP1_TTN: ["Missense in TTN (local rule)", "Lab rule: a missense in TTN does not explain a cardiomyopathy and is benign stand-alone. Not a published ACMG criterion: cite it as a local rule in the report."],
+    PM1: ["Hot spot or domain without benign variants", "In a mutational hot spot or critical functional domain without benign variation. With PP3, PM1 + PP3 is capped at Strong, 4 points (Pejaver 2022)."],
+    PM4: ["In-frame indel or stop-loss, non-repeat", "Protein length change: in-frame deletion or insertion outside a repeat region, or stop-loss."],
+    BP3: ["In-frame indel in repeat region", "In-frame deletion or insertion in a repetitive region without known function."],
+    BP7: ["Synonymous without splicing effect", "Synonymous (or intronic beyond +7/−21, Walker 2023) with no predicted splicing impact, at a nucleotide that is not highly conserved. Walker 2023 also allows it with RNA showing no effect. Not combined with BP4: it is the same prediction."],
+    PM3: ["In trans with P (recessive)", "Recessive: detected in trans with a pathogenic variant. Strength from the ClinGen SVI PM3 point system (phase confirmed, class of the other variant, homozygotes)."],
+    PS3: ["Well-established functional assay: damaging", "Well-established functional study showing a damaging effect. Strength from the assay's calibrated OddsPath (Brnich 2020): Strong ≥ 18.7, Moderate ≥ 4.3, Supporting ≥ 2.1."],
+    BS3: ["Well-established functional assay: normal", "Well-established functional study showing no damaging effect. Strength from the OddsPath (Brnich 2020): Strong ≤ 0.053, Moderate ≤ 0.23, Supporting ≤ 0.48."],
+    PP3: ["Predictors: damaging", "Computational evidence of a deleterious effect. REVEL (Pejaver 2022): Supporting ≥ 0.644, Moderate ≥ 0.773, Strong ≥ 0.932. Splicing: SpliceAI ≥ 0.2 (Walker 2023). In cardio the local sheet uses Supporting only. Not combined with PVS1 for the same evidence."],
+    BP4: ["Predictors: benign", "Computational evidence of no impact. REVEL (Pejaver 2022): Supporting ≤ 0.290, Moderate ≤ 0.183, Strong ≤ 0.016. Splicing: SpliceAI ≤ 0.1 (Walker 2023). In cardio the local sheet uses Supporting only."],
+    PP4: ["Highly specific phenotype", "Phenotype or family history highly specific for a disease with a single genetic etiology. Cardiomyopathies are genetically heterogeneous: not recommended."],
+    PP5: ["Reputable source: pathogenic", "A reputable source reports it as pathogenic without sharing the evidence. Retired by ClinGen SVI (Biesecker 2018): use the primary evidence."],
+    BP6: ["Reputable source: benign", "A reputable source reports it as benign without sharing the evidence. Retired by ClinGen SVI (Biesecker 2018)."],
+    BP2: ["In trans with P (AD) / in cis with P", "In trans with a pathogenic variant in a fully penetrant dominant gene, or in cis with a pathogenic variant in any inheritance pattern. In cardio, double carriers have more severe phenotypes: not recommended."],
+    BP5: ["Case with an alternate molecular basis", "Found in a case with an alternate molecular cause. In cardio, disease can be oligogenic and dose-dependent: not recommended."],
+  };
+  const SUB_EN = { "Truncante / null": "Truncating / null", "Missense": "Missense", "Hot-spot / dominio": "Hot spot / domain", "Indel / stop-loss": "Indel / stop-loss", "Sinónima / intrónica": "Synonymous / intronic", "Recesiva": "Recessive" };
+  const text = (c, what) => (LANG === "en" ? EN[c.code][what === "guide" ? 1 : 0] : c[what === "guide" ? "guide" : "short"]);
+  const subText = (c) => (c.sub && LANG === "en" ? SUB_EN[c.sub] : c.sub);
   const BY = Object.fromEntries(CRITERIA.map((c) => [c.code, c]));
   const ORDER = CRITERIA.map((c) => c.code);
   const canon = ["PVS1","PS1","PS2","PS3","PS4","PM1","PM2","PM3","PM4","PM5","PM6","PP1","PP2","PP3","PP4","PP5","BA1","BP1_TTN","BS1","BS2","BS3","BS4","BP1","BP2","BP3","BP4","BP5","BP6","BP7"];
 
   // Pares que no pueden ir juntos: misma evidencia contada dos veces, o hechos contradictorios sobre la misma variante.
   const PAIRS = [
-    ["PM2","BS1","una frecuencia, un criterio"], ["PM2","BA1","una frecuencia, un criterio"], ["BS1","BA1","BA1 ya incluye BS1"],
-    ["PS1","PM5","mismo residuo: o el mismo AA (PS1) o otro (PM5)"],
-    ["PP3","BP4","los predictores van en un sentido"], ["PS3","BS3","el ensayo da un resultado"], ["PP1","BS4","la segregación va en un sentido"],
-    ["PS2","PM6","un de novo es confirmado o asumido"], ["PM4","BP3","región repetitiva o no"], ["BP1","BP1_TTN","BP1_TTN ya es la versión TTN"],
-    ["PP2","BP1","mecanismo missense frente a solo truncante"], ["PP2","BP1_TTN","mecanismo missense frente a regla TTN"], ["PP5","BP6","fuente reputada en un sentido"],
-    ["PVS1","PP3","PVS1 ya cuenta el efecto previsto (Walker 2023)"], ["PVS1","BP4","null frente a predicción benigna"],
-    ["BP7","PP3","BP7 exige que no se prevea efecto en splicing"], ["PVS1","PS1","nunca juntas (JPO 15-nov-2026)"], ["BP7","BP4","la misma predicción de splicing, contada una vez (JPO 15-nov-2026)"], ["BP7","PS1","BP7 niega el efecto en splicing que PS1 afirma"],
+    ["PM2","BS1","una frecuencia, un criterio","one frequency, one criterion"], ["PM2","BA1","una frecuencia, un criterio","one frequency, one criterion"], ["BS1","BA1","BA1 ya incluye BS1","BA1 already includes BS1"],
+    ["PS1","PM5","mismo residuo: o el mismo AA (PS1) o otro (PM5)","same residue: either the same AA (PS1) or a different one (PM5)"],
+    ["PP3","BP4","los predictores van en un sentido","predictors point one way"], ["PS3","BS3","el ensayo da un resultado","the assay gives one result"], ["PP1","BS4","la segregación va en un sentido","segregation points one way"],
+    ["PS2","PM6","un de novo es confirmado o asumido","a de novo is either confirmed or assumed"], ["PM4","BP3","región repetitiva o no","repeat region or not"], ["BP1","BP1_TTN","BP1_TTN ya es la versión TTN","BP1_TTN is already the TTN version"],
+    ["PP2","BP1","mecanismo missense frente a solo truncante","missense mechanism vs truncating-only"], ["PP2","BP1_TTN","mecanismo missense frente a regla TTN","missense mechanism vs TTN rule"], ["PP5","BP6","fuente reputada en un sentido","reputable source points one way"],
+    ["PVS1","PP3","PVS1 ya cuenta el efecto previsto (Walker 2023)","PVS1 already counts the predicted effect (Walker 2023)"], ["PVS1","BP4","null frente a predicción benigna","null vs benign prediction"],
+    ["BP7","PP3","BP7 exige que no se prevea efecto en splicing","BP7 requires no predicted splicing effect"], ["PVS1","PS1","nunca juntas (JPO 15-nov-2026)","never together (JPO, 15-nov-2026)"], ["BP7","BP4","la misma predicción de splicing, contada una vez (JPO 15-nov-2026)","the same splicing prediction, counted once (JPO, 15-nov-2026)"], ["BP7","PS1","BP7 niega el efecto en splicing que PS1 afirma","BP7 denies the splicing effect PS1 asserts"],
   ];
   const TYPES = { PVS1: "null", PM4: "inframe", BP3: "inframe", PM5: "missense", PP2: "missense", BP1: "missense", BP1_TTN: "missense", PM1: "missense_inframe", BP7: "synonymous" };
   const typeClash = (a, b) => {
@@ -229,10 +272,12 @@ const ACMGEngine = (() => {
     const ok = (x, y) => (x === "missense_inframe" && (y === "missense" || y === "inframe")) || (y === "missense_inframe" && (x === "missense" || x === "inframe"));
     return !ok(ta, tb);
   };
-  const TYPE_NAME = { null: "null", inframe: "indel en marco", missense: "missense", missense_inframe: "missense / en marco", synonymous: "sinónima" };
+  const TYPE_NAME = { es: { null: "null", inframe: "indel en marco", missense: "missense", missense_inframe: "missense / en marco", synonymous: "sinónima" },
+                      en: { null: "null", inframe: "in-frame indel", missense: "missense", missense_inframe: "missense / in-frame", synonymous: "synonymous" } };
   function conflict(a, b) {
-    for (const [x, y, why] of PAIRS) if ((x === a && y === b) || (x === b && y === a)) return why;
-    if (typeClash(a, b)) return `tipo de variante: ${TYPE_NAME[TYPES[a]]} frente a ${TYPE_NAME[TYPES[b]]}`;
+    for (const [x, y, es, en] of PAIRS) if ((x === a && y === b) || (x === b && y === a)) return L(es, en);
+    const tn = TYPE_NAME[LANG];
+    if (typeClash(a, b)) return L(`tipo de variante: ${tn[TYPES[a]]} frente a ${tn[TYPES[b]]}`, `variant type: ${tn[TYPES[a]]} vs ${tn[TYPES[b]]}`);
     return null;
   }
   function blockers(state, code) {
@@ -244,11 +289,11 @@ const ACMGEngine = (() => {
   // state: { CODE: { l: "S"|"M"|..., src?: "texto de procedencia" } }
   function select(state, code, level, src) {
     const c = BY[code];
-    if (!c) throw new Error(`criterio desconocido: ${code}`);
+    if (!c) throw new Error(L(`criterio desconocido: ${code}`, `unknown criterion: ${code}`));
     const l = level || c.def;
-    if (!c.levels.includes(l)) throw new Error(`${code} no admite fuerza ${l}`);
+    if (!c.levels.includes(l)) throw new Error(L(`${code} no admite fuerza ${l}`, `${code} does not allow strength ${l}`));
     const b = blockers(state, code);
-    if (b.length) { const e = new Error(`${code} choca con ${b.map((x) => x.code).join(", ")}: ${b[0].why}`); e.blockers = b; throw e; }
+    if (b.length) { const e = new Error(L(`${code} choca con ${b.map((x) => x.code).join(", ")}: ${b[0].why}`, `${code} conflicts with ${b.map((x) => x.code).join(", ")}: ${b[0].why}`)); e.blockers = b; throw e; }
     return { ...state, [code]: src ? { l, src } : { l } };
   }
   function toggle(state, code, level) {
@@ -275,18 +320,18 @@ const ACMGEngine = (() => {
     let capped = 0;
     if (state.PM1 && state.PP3) {
       const sum = pointsOf("PM1", state.PM1.l) + pointsOf("PP3", state.PP3.l);
-      if (sum > 4) { capped = sum - 4; pPts -= capped; warns.push({ t: `PM1 + PP3 = ${sum} pts, se quedan en 4 (techo Strong, Pejaver 2022)` }); }
+      if (sum > 4) { capped = sum - 4; pPts -= capped; warns.push({ t: L(`PM1 + PP3 = ${sum} pts, se quedan en 4 (techo Strong, Pejaver 2022)`, `PM1 + PP3 = ${sum} pts, capped at 4 (Strong ceiling, Pejaver 2022)`) }); }
     }
     const standalone = codes.filter((k) => state[k].l === "SA");
     const total = pPts + bPts;
     let cls;
     if (standalone.length) {
       cls = CLASSES.find((x) => x.id === "B");
-      if (pPts > 0) warns.push({ t: `${standalone.join(", ")} es stand-alone y hay evidencia patogénica: revisar`, bad: true });
+      if (pPts > 0) warns.push({ t: L(`${standalone.join(", ")} es stand-alone y hay evidencia patogénica: revisar`, `${standalone.join(", ")} is stand-alone and there is pathogenic evidence: review`), bad: true });
     } else cls = CLASSES.find((x) => total >= x.min);
-    if (!standalone.length && pPts > 0 && bPts < 0) warns.push({ t: `Evidencia en conflicto: +${pPts} patogénica y ${bPts} benigna` });
+    if (!standalone.length && pPts > 0 && bPts < 0) warns.push({ t: L(`Evidencia en conflicto: +${pPts} patogénica y ${bPts} benigna`, `Conflicting evidence: +${pPts} pathogenic and ${bPts} benign`) });
     const nr = codes.filter((k) => BY[k].nr.includes(state[k].l));
-    if (nr.length) warns.push({ t: `No recomendado en cardio: ${nr.map((k) => label(k, state[k].l)).join(", ")}` });
+    if (nr.length) warns.push({ t: L("No recomendado en cardio: ", "Not recommended in cardio: ") + nr.map((k) => label(k, state[k].l)).join(", ") });
     return { pPts, bPts, total, capped, standalone, cls, counts, warns, n: codes.length };
   }
 
@@ -304,7 +349,7 @@ const ACMGEngine = (() => {
     });
   }
   function format(state, opts) {
-    const o = opts || {};
+    const o = { lang: LANG, ...(opts || {}) };
     const s = score(state);
     const list = ordered(state).map((k) => label(k, state[k].l, o.style)).join(", ");
     const pre = o.variant ? `${o.variant.trim()}: ` : "";
@@ -328,14 +373,14 @@ const ACMGEngine = (() => {
     if (!BY[code]) return { err: t };
     let l = BY[code].def;
     if (m[3]) { const k = m[3].toLowerCase(); if (!(k in SUF)) return { err: t }; l = SUF[k]; }
-    if (!BY[code].levels.includes(l)) return { err: t, why: `${code} no admite ${LEVELS[l].long}` };
+    if (!BY[code].levels.includes(l)) return { err: t, why: L(`${code} no admite ${LEVELS[l].long}`, `${code} does not allow ${LEVELS[l].long}`) };
     return { code, l };
   }
   function parse(text, base) {
     let state = { ...(base || {}) }; const errors = [];
     for (const tok of String(text).split(/[\s,;()]+/)) {
       const r = parseToken(tok); if (!r) continue;
-      if (r.err) { errors.push(r.why || `no reconozco «${r.err}»`); continue; }
+      if (r.err) { errors.push(r.why || L(`no reconozco «${r.err}»`, `unrecognized «${r.err}»`)); continue; }
       try { state = { ...state }; delete state[r.code]; state = select(state, r.code, r.l); } catch (e) { errors.push(e.message); }
     }
     return { state, errors };
@@ -353,7 +398,7 @@ const ACMGEngine = (() => {
     return parse(toks.join(" ")).state;
   }
 
-  return { LEVELS, CRITERIA, BY, ORDER, CLASSES, nativeOf, conflict, blockers, select, toggle, score, label, format, parse, toHash, fromHash };
+  return { LEVELS, CRITERIA, BY, ORDER, CLASSES, EN, nativeOf, conflict, blockers, select, toggle, score, label, format, parse, toHash, fromHash, setLang, getLang, text, subText };
 })();
 if (typeof module !== "undefined") module.exports = ACMGEngine;
 /* ENGINE END */
@@ -364,31 +409,77 @@ if (typeof module !== "undefined") module.exports = ACMGEngine;
   const E = ACMGEngine;
   const $ = (id) => document.getElementById(id);
   let state = {};
-  let lang = "es";
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 
-  const BLOCKS = [
-    ["c1", "pop", "Población"], ["c1", "cc", "Casos / controles"], ["c1", "seg", "Segregación"], ["c1", "dn", "De novo"],
-    ["c2", "tipo", "Tipo de variante"],
-    ["c3", "fun", "Funcional"], ["c3", "pred", "Predictores (solo Supporting en cardio)"], ["c3", "otros", "Otros"],
-  ];
-  const rows = {};
-  for (const [col, id, title] of BLOCKS) {
+  // Textos de la interfaz. Los de los criterios, avisos y bloqueos viven en el motor (E.text, E.setLang).
+  const UI = {
+    es: { copy: "Copiar", copied: "Copiado", guide: "Guía", guideTitle: "Muestra la explicación de cada criterio", hideNr: "Ocultar no rec.",
+      hideNrTitle: "Oculta los no recomendados en cardio", clear: "Limpiar", tallyH: "Recuento", detailH: "Detalle",
+      quickPh: "Teclea: pvs1 pm2_sup ps3_mod … ↵  ( / para venir aquí)", variantPh: "Variante (opcional): gen · hg38 · c. · p.",
+      ariaShort: "Resultado corto para copiar", ariaLong: "Resultado largo para copiar", ariaQuick: "Entrada rápida de criterios", ariaVariant: "Variante",
+      outPh: "Marca criterios: aquí sale p. ej. LP (PVS1, PM2_sup)", nr: " · no rec. cardio", path: "Pat.", ben: "Ben.",
+      mark: (c) => `Marcar ${c} con su fuerza por defecto`, blocked: (b, why) => `Bloqueado por ${b}: ${why}`, info: (c) => `Detalle de ${c}`,
+      strengths: "Fuerzas", def: " (por defecto)", nrLong: " — no rec. cardio", notWith: "No va con", prefilled: "Prellenado",
+      selectText: "Selecciona el texto y cópialo con Ctrl+C",
+      refsPts: "Puntos (Tavtigian 2020): VS 8 · S 4 · M 2 · Sup 1; benignas −4 / −2 / −1; stand-alone = Benign. Clases: P ≥ 10 · LP 6–9 · Hot-VUS 4–5 · VUS 0–3 · LB −1 a −6 · B ≤ −7.",
+      hint: `<p class="hint">Pulsa <b>?</b> en un criterio para ver su definición, umbrales y referencia. Pulsa el código para marcarlo con su fuerza por defecto (borde marcado), o elige otra fuerza en sus botones.</p><p class="hint">Atajos: <kbd>/</kbd> entrada rápida · <kbd>Esc</kbd> sale · <kbd>Alt</kbd>+<kbd>C</kbd> copia la línea corta · <kbd>Alt</kbd>+<kbd>L</kbd> limpia.</p>`,
+      blocks: { pop: "Población", cc: "Casos / controles", seg: "Segregación", dn: "De novo", tipo: "Tipo de variante", fun: "Funcional", pred: "Predictores (solo Supporting en cardio)", otros: "Otros" } },
+    en: { copy: "Copy", copied: "Copied", guide: "Guide", guideTitle: "Show each criterion's explanation", hideNr: "Hide not rec.",
+      hideNrTitle: "Hide criteria not recommended in cardio", clear: "Clear", tallyH: "Tally", detailH: "Detail",
+      quickPh: "Type: pvs1 pm2_sup ps3_mod … ↵  ( / to jump here)", variantPh: "Variant (optional): gene · hg38 · c. · p.",
+      ariaShort: "Short result to copy", ariaLong: "Long result to copy", ariaQuick: "Quick criteria entry", ariaVariant: "Variant",
+      outPh: "Pick criteria: e.g. LP (PVS1, PM2_sup) appears here", nr: " · not rec. cardio", path: "Path.", ben: "Ben.",
+      mark: (c) => `Apply ${c} at its default strength`, blocked: (b, why) => `Blocked by ${b}: ${why}`, info: (c) => `Details of ${c}`,
+      strengths: "Strengths", def: " (default)", nrLong: " — not rec. in cardio", notWith: "Not combinable with", prefilled: "Prefilled",
+      selectText: "Select the text and copy it with Ctrl+C",
+      refsPts: "Points (Tavtigian 2020): VS 8 · S 4 · M 2 · Sup 1; benign −4 / −2 / −1; stand-alone = Benign. Classes: P ≥ 10 · LP 6–9 · Hot-VUS 4–5 · VUS 0–3 · LB −1 to −6 · B ≤ −7.",
+      hint: `<p class="hint">Press <b>?</b> on a criterion to see its definition, thresholds and reference. Press the code to apply it at its default strength (outlined), or pick another strength with its buttons.</p><p class="hint">Shortcuts: <kbd>/</kbd> quick entry · <kbd>Esc</kbd> leave · <kbd>Alt</kbd>+<kbd>C</kbd> copy the short line · <kbd>Alt</kbd>+<kbd>L</kbd> clear.</p>`,
+      blocks: { pop: "Population", cc: "Case-control", seg: "Segregation", dn: "De novo", tipo: "Variant type", fun: "Functional", pred: "Predictors (Supporting only in cardio)", otros: "Other" } },
+  };
+  let lang = store.get("acmg.lang") || ((navigator.language || "es").toLowerCase().startsWith("es") ? "es" : "en");
+  const T = () => UI[lang];
+
+  const BLOCKS = [["c1", "pop"], ["c1", "cc"], ["c1", "seg"], ["c1", "dn"], ["c2", "tipo"], ["c3", "fun"], ["c3", "pred"], ["c3", "otros"]];
+  const rows = {}, heads = [];
+  for (const [col, id] of BLOCKS) {
     const sec = document.createElement("section"); sec.className = "blk";
-    sec.innerHTML = `<h3>${title}</h3>`;
+    const h3 = document.createElement("h3"); h3.dataset.block = id; sec.appendChild(h3);
     let sub = null;
     for (const c of E.CRITERIA.filter((x) => x.block === id)) {
-      if (c.sub && c.sub !== sub) { sub = c.sub; const h = document.createElement("h4"); h.textContent = sub; sec.appendChild(h); }
+      if (c.sub && c.sub !== sub) { sub = c.sub; const h = document.createElement("h4"); h.dataset.sub = c.code; sec.appendChild(h); heads.push(h); }
       const r = document.createElement("div"); r.className = "crit" + (c.nr.length === c.levels.length ? " nr" : ""); r.dataset.code = c.code;
       const b = c.side === "B" ? " b" : "";
-      r.innerHTML = `<button class="code${b}" type="button" title="Marcar ${c.code} con su fuerza por defecto">${c.code}</button>`
-        + `<span class="lbl">${c.short}</span>`
-        + `<span class="chips">${c.levels.map((l) => `<button type="button" class="chip${b}${l === c.def ? " def" : ""}${c.nr.includes(l) ? " nr" : ""}" data-l="${l}" title="${E.label(c.code, l, "long")} (${l === "SA" ? "stand-alone" : (c.side === "P" ? "+" : "−") + E.LEVELS[l].pts})">${E.LEVELS[l].chip}</button>`).join("")}</span>`
-        + `<button class="info" type="button" aria-label="Detalle de ${c.code}">?</button>`
-        + `<div class="guide">${c.guide}</div>`;
+      r.innerHTML = `<button class="code${b}" type="button">${c.code}</button>`
+        + `<span class="lbl"></span>`
+        + `<span class="chips">${c.levels.map((l) => `<button type="button" class="chip${b}${l === c.def ? " def" : ""}${c.nr.includes(l) ? " nr" : ""}" data-l="${l}">${E.LEVELS[l].chip}</button>`).join("")}</span>`
+        + `<button class="info" type="button">?</button>`
+        + `<div class="guide"></div>`;
       sec.appendChild(r); rows[c.code] = r;
     }
     $(col).appendChild(sec);
+  }
+  let shown = null; // criterio en el panel de detalle
+
+  function applyLang() {
+    E.setLang(lang);
+    document.documentElement.lang = lang;
+    document.documentElement.style.setProperty("--nr-txt", JSON.stringify(T().nr));
+    for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = T()[el.dataset.i18n];
+    for (const el of document.querySelectorAll("[data-i18n-ph]")) el.placeholder = T()[el.dataset.i18nPh];
+    for (const el of document.querySelectorAll("[data-i18n-title]")) el.title = T()[el.dataset.i18nTitle];
+    for (const el of document.querySelectorAll("[data-i18n-aria]")) el.setAttribute("aria-label", T()[el.dataset.i18nAria]);
+    for (const el of document.querySelectorAll("[data-block]")) el.textContent = T().blocks[el.dataset.block];
+    for (const h of heads) h.textContent = E.subText(E.BY[h.dataset.sub]);
+    for (const c of E.CRITERIA) {
+      const r = rows[c.code];
+      r.querySelector(".lbl").textContent = E.text(c, "short");
+      r.querySelector(".guide").textContent = E.text(c, "guide");
+      r.querySelector(".info").setAttribute("aria-label", T().info(c.code));
+    }
+    for (const b of document.querySelectorAll("[data-lang]")) b.classList.toggle("on", b.dataset.lang === lang);
+    if (shown) showDetail(shown); else $("detail").innerHTML = T().hint;
+    flash("");
+    render();
   }
 
   function flash(msg) { $("flash").textContent = msg || ""; }
@@ -405,12 +496,13 @@ if (typeof module !== "undefined") module.exports = ACMGEngine;
   });
 
   function showDetail(code) {
-    const c = E.BY[code];
+    const c = E.BY[code], t = T(); shown = code;
     const conf = E.CRITERIA.filter((x) => x.code !== code && E.conflict(code, x.code)).map((x) => x.code);
-    $("detail").innerHTML = `<p><b class="c">${c.code}</b> · ${c.short}</p><p>${c.guide}</p>`
-      + `<p class="meta">Fuerzas: ${c.levels.map((l) => E.label(c.code, l, "long") + (l === c.def ? " (por defecto)" : "") + (c.nr.includes(l) ? " — no rec. cardio" : "")).join(" · ")}</p>`
-      + (conf.length ? `<p class="meta">No va con: ${conf.join(", ")}</p>` : "")
-      + (state[code] && state[code].src ? `<p class="meta">Prellenado: ${state[code].src}</p>` : "");
+    const esc = (x) => String(x).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+    $("detail").innerHTML = `<p><b class="c">${c.code}</b> · ${E.text(c, "short")}</p><p>${E.text(c, "guide")}</p>`
+      + `<p class="meta">${t.strengths}: ${c.levels.map((l) => E.label(c.code, l, "long") + (l === c.def ? t.def : "") + (c.nr.includes(l) ? t.nrLong : "")).join(" · ")}</p>`
+      + (conf.length ? `<p class="meta">${t.notWith}: ${conf.join(", ")}</p>` : "")
+      + (state[code] && state[code].src ? `<p class="meta">${t.prefilled}: ${esc(state[code].src)}</p>` : "");
   }
 
   function render() {
@@ -420,12 +512,12 @@ if (typeof module !== "undefined") module.exports = ACMGEngine;
       r.classList.toggle("blocked", bl.length > 0);
       r.classList.toggle("auto", !!(sel && sel.src));
       r.querySelector(".code").disabled = bl.length > 0;
-      r.querySelector(".code").title = bl.length ? `Bloqueado por ${bl.map((x) => x.code).join(", ")}: ${bl[0].why}` : `Marcar ${c.code} con su fuerza por defecto`;
+      r.querySelector(".code").title = bl.length ? T().blocked(bl.map((x) => x.code).join(", "), bl[0].why) : T().mark(c.code);
       for (const ch of r.querySelectorAll(".chip")) {
         ch.classList.toggle("sel", !!(sel && sel.l === ch.dataset.l));
         ch.disabled = bl.length > 0;
         ch.setAttribute("aria-pressed", sel && sel.l === ch.dataset.l ? "true" : "false");
-        if (bl.length) ch.title = `Bloqueado por ${bl.map((x) => x.code).join(", ")}: ${bl[0].why}`;
+        if (bl.length) ch.title = T().blocked(bl.map((x) => x.code).join(", "), bl[0].why);
         else ch.title = `${E.label(c.code, ch.dataset.l, "long")} (${ch.dataset.l === "SA" ? "stand-alone" : (c.side === "P" ? "+" : "−") + E.LEVELS[ch.dataset.l].pts})`;
       }
     }
@@ -435,12 +527,12 @@ if (typeof module !== "undefined") module.exports = ACMGEngine;
     $("pts").textContent = s.standalone.length ? "stand-alone" : `${s.total > 0 ? "+" : ""}${s.total} pts`;
     const variant = $("variant").value;
     $("outShort").value = s.n ? E.format(state, { variant }) : "";
-    $("outShort").placeholder = "Marca criterios: aquí sale p. ej. LP (PVS1, PM2_sup)";
-    $("outLong").value = s.n ? E.format(state, { style: "long", lang, variant }) : "";
+    $("outShort").placeholder = T().outPh;
+    $("outLong").value = s.n ? E.format(state, { style: "long", variant }) : "";
     const cP = s.counts.P, cB = s.counts.B;
     $("tally").innerHTML = `<span></span><span class="h">VS/SA</span><span class="h">Str</span><span class="h">Mod</span><span class="h">Sup</span><span class="h tot">pts</span>`
-      + `<span class="h">Pat.</span><span>${cP.VS}</span><span>${cP.S}</span><span>${cP.M}</span><span>${cP.P}</span><span class="tot">+${s.pPts}</span>`
-      + `<span class="h">Ben.</span><span>${cB.SA}</span><span>${cB.S}</span><span>${cB.M}</span><span>${cB.P}</span><span class="tot">${s.bPts}</span>`;
+      + `<span class="h">${T().path}</span><span>${cP.VS}</span><span>${cP.S}</span><span>${cP.M}</span><span>${cP.P}</span><span class="tot">+${s.pPts}</span>`
+      + `<span class="h">${T().ben}</span><span>${cB.SA}</span><span>${cB.S}</span><span>${cB.M}</span><span>${cB.P}</span><span class="tot">${s.bPts}</span>`;
     const segs = [["B", -10, -7, "var(--bsa)", "var(--bsa-fg)"], ["LB", -6, -1, "var(--bmo)", "var(--bmo-fg)"], ["VUS", 0, 3, "var(--off)", "var(--fg)"], ["Hot", 4, 5, "var(--mo)", "var(--mo-fg)"], ["LP", 6, 9, "#d9822b", "#fff"], ["P", 10, 12, "var(--bad)", "#fff"]];
     const span = 23; // -10 … 12
     const v = s.standalone.length ? -10 : Math.max(-10, Math.min(12, s.total));
@@ -453,14 +545,14 @@ if (typeof module !== "undefined") module.exports = ACMGEngine;
 
   function copy(id, btn) {
     const el = $(id); if (!el.value) return;
-    const done = () => { const t = btn.textContent; btn.textContent = "Copiado"; setTimeout(() => (btn.textContent = t), 900); };
-    const fallback = () => { el.focus(); el.select(); try { document.execCommand("copy"); done(); } catch (e) { flash("Selecciona el texto y cópialo con Ctrl+C"); } };
+    const done = () => { btn.textContent = T().copied; setTimeout(() => (btn.textContent = T().copy), 900); };
+    const fallback = () => { el.focus(); el.select(); try { document.execCommand("copy"); done(); } catch (e) { flash(T().selectText); } };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(done, fallback); else fallback();
   }
   $("cpShort").onclick = () => copy("outShort", $("cpShort"));
   $("cpLong").onclick = () => copy("outLong", $("cpLong"));
   for (const id of ["outShort", "outLong"]) $(id).addEventListener("focus", (e) => e.target.select());
-  $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; $("lang").textContent = lang.toUpperCase(); render(); };
+  for (const b of document.querySelectorAll("[data-lang]")) b.onclick = () => { lang = b.dataset.lang; store.set("acmg.lang", lang); applyLang(); };
   $("clear").onclick = () => { set({}); flash(""); };
   $("variant").addEventListener("input", render);
 
@@ -500,8 +592,8 @@ if (typeof module !== "undefined") module.exports = ACMGEngine;
   window.addEventListener("message", (ev) => { const d = ev.data; if (d && d.type === "acmg:prefill") prefill(d.criteria, d.variant); });
 
   state = E.fromHash(location.hash);
-  if (!Object.keys(state).length) state = E.parse("PVS1 PM2_s").state; // ejemplo al abrir
-  render();
+  if (!Object.keys(state).length) state = E.parse("PVS1 PM2").state; // ejemplo al abrir: LP (PVS1, PM2_sup)
+  applyLang();
 })();
 </script>
 
