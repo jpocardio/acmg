@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clasificador ACMG</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: barra fija con resultado y texto para copiar; debajo, rejilla de 4 columnas como la hoja (población · tipo de variante · funcional/predictores · resumen). */
+:root{
+  --bg:#f6f7f5; --panel:#ffffff; --fg:#1d2420; --muted:#66706a; --line:#dde2dd; --accent:#2d6a4f;
+  --vs:#4f9a3a; --vs-fg:#ffffff; --st:#9fcf86; --st-fg:#11300a; --mo:#f3dc84; --mo-fg:#3d3000; --su:#f2b9b9; --su-fg:#4a1010;
+  --bsa:#4a4f55; --bsa-fg:#ffffff; --bst:#8e959c; --bst-fg:#ffffff; --bmo:#b9bfc5; --bmo-fg:#1b1f23; --bsu:#dde1e5; --bsu-fg:#1b1f23;
+  --warn:#9a5b00; --warn-bg:#fff4dc; --bad:#a3262a; --off:#c9cec9;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --f-code:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121614; --panel:#1a201d; --fg:#e4e9e5; --muted:#97a19b; --line:#2c3531; --accent:#74c69d;
+  --vs:#3f8a2c; --vs-fg:#ffffff; --st:#5f9a48; --st-fg:#0b1a06; --mo:#b99a2c; --mo-fg:#1c1500; --su:#b46a6a; --su-fg:#1f0606;
+  --bsa:#d5d9dd; --bsa-fg:#111; --bst:#9aa1a8; --bst-fg:#111; --bmo:#6b737b; --bmo-fg:#fff; --bsu:#454c53; --bsu-fg:#fff;
+  --warn:#f0b75a; --warn-bg:#2d2412; --bad:#ff7b7f; --off:#39423d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614; --panel:#1a201d; --fg:#e4e9e5; --muted:#97a19b; --line:#2c3531; --accent:#74c69d;
+  --vs:#3f8a2c; --vs-fg:#ffffff; --st:#5f9a48; --st-fg:#0b1a06; --mo:#b99a2c; --mo-fg:#1c1500; --su:#b46a6a; --su-fg:#1f0606;
+  --bsa:#d5d9dd; --bsa-fg:#111; --bst:#9aa1a8; --bst-fg:#111; --bmo:#6b737b; --bmo-fg:#fff; --bsu:#454c53; --bsu-fg:#fff;
+  --warn:#f0b75a; --warn-bg:#2d2412; --bad:#ff7b7f; --off:#39423d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:13px/1.35 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 16px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:8px max(16px,env(safe-area-inset-left,0px));display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.brand{font-weight:700;font-size:14px;white-space:nowrap}
+.brand small{font-weight:500;color:var(--muted);font-size:11px;margin-left:4px}
+.result{display:flex;align-items:center;gap:8px;min-width:0}
+.cls{font:700 15px var(--f-body);padding:3px 10px;border-radius:4px;white-space:nowrap;background:var(--off);color:var(--fg)}
+.cls[data-c="P"]{background:var(--bad);color:#fff}
+.cls[data-c="LP"]{background:#d9822b;color:#fff}
+.cls[data-c="HVUS"]{background:var(--mo);color:var(--mo-fg)}
+.cls[data-c="VUS"]{background:var(--off);color:var(--fg)}
+.cls[data-c="LB"]{background:var(--bmo);color:var(--bmo-fg)}
+.cls[data-c="B"]{background:var(--bsa);color:var(--bsa-fg)}
+.pts{font:700 13px var(--f-code);color:var(--muted);white-space:nowrap}
+.outs{display:flex;flex-direction:column;gap:3px;flex:1 1 420px;min-width:0}
+.out{display:flex;gap:6px;align-items:center;min-width:0}
+.out input{flex:1;min-width:0;font:600 13px var(--f-code);padding:4px 7px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+.out.long input{font-weight:500;font-size:12px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:3px 8px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+.tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.quick{display:flex;gap:6px;align-items:center;flex:1 1 300px;min-width:0}
+.quick input{flex:1;min-width:0;font:12px var(--f-code);padding:4px 7px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+.quick input.err{border-color:var(--bad)}
+.varin{flex:1 1 300px;min-width:0;font:12px var(--f-body);padding:4px 7px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px;align-items:start}
+@media (max-width:1250px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.grid{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.blk{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px 7px}
+.blk h3{margin:0 0 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.blk h4{margin:6px 0 2px;font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.crit{display:grid;grid-template-columns:62px minmax(0,1fr) auto 18px;gap:4px;align-items:center;padding:2px 0;border-top:1px dashed transparent}
+.crit + .crit{border-top-color:var(--line)}
+.code{font:700 11.5px var(--f-code);text-align:left;background:none;border:0;padding:2px 0;cursor:pointer;white-space:nowrap}
+.code.b{color:var(--muted)}
+.lbl{font-size:11.5px;color:var(--fg);min-width:0}
+.crit.nr .code,.crit.nr .lbl{opacity:.55}
+.crit.nr .lbl::after{content:" · no rec. cardio";font-size:10px;color:var(--muted)}
+.crit.blocked .lbl{text-decoration:line-through;text-decoration-color:var(--muted)}
+.chips{display:flex;gap:2px}
+.chip{font:600 10.5px var(--f-code);min-width:30px;padding:2px 3px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--muted);cursor:pointer}
+.chip.def{border-color:var(--muted);color:var(--fg)}
+.chip.nr{border-style:dashed}
+.chip:disabled{cursor:not-allowed;opacity:.35}
+.chip.sel[data-l="VS"]{background:var(--vs);color:var(--vs-fg);border-color:var(--vs)}
+.chip.sel[data-l="S"]{background:var(--st);color:var(--st-fg);border-color:var(--st)}
+.chip.sel[data-l="M"]{background:var(--mo);color:var(--mo-fg);border-color:var(--mo)}
+.chip.sel[data-l="P"]{background:var(--su);color:var(--su-fg);border-color:var(--su)}
+.chip.b.sel[data-l="SA"]{background:var(--bsa);color:var(--bsa-fg);border-color:var(--bsa)}
+.chip.b.sel[data-l="S"]{background:var(--bst);color:var(--bst-fg);border-color:var(--bst)}
+.chip.b.sel[data-l="M"]{background:var(--bmo);color:var(--bmo-fg);border-color:var(--bmo)}
+.chip.b.sel[data-l="P"]{background:var(--bsu);color:var(--bsu-fg);border-color:var(--bsu)}
+.crit.auto .code::after{content:"•";color:var(--accent);margin-left:2px}
+.info{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:none;font-size:10.5px;line-height:1;cursor:pointer;color:var(--muted);padding:0}
+.info:hover{border-color:var(--accent);color:var(--accent)}
+.guide{display:none;grid-column:1/-1;font-size:11px;color:var(--muted);padding:0 0 2px 0}
+body.g .guide{display:block}
+.tally{font:12px var(--f-code);display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr)) auto;gap:2px 6px;align-items:center}
+.tally .h{color:var(--muted);font-size:10.5px}
+.tally .tot{font-weight:700;text-align:right}
+.scale{display:flex;height:20px;border-radius:3px;overflow:hidden;position:relative;margin:8px 0 2px;font:600 10px var(--f-code)}
+.scale span{display:flex;align-items:center;justify-content:center;color:var(--fg)}
+.scale .mk{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--fg);border-radius:2px;transition:left .15s}
+@media (prefers-reduced-motion:reduce){.scale .mk{transition:none}}
+.scale-n{display:flex;justify-content:space-between;font:10px var(--f-code);color:var(--muted)}
+.warns{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px}
+.warns li{font-size:11.5px;background:var(--warn-bg);color:var(--warn);border-radius:3px;padding:3px 6px}
+.warns li.bad{color:var(--bad)}
+.detail{font-size:12px;line-height:1.45}
+.detail b.c{font-family:var(--f-code)}
+.detail p{margin:4px 0}
+.detail .meta{color:var(--muted);font-size:11px}
+.hint{font-size:11px;color:var(--muted)}
+.refs{font-size:10.5px;color:var(--muted);line-height:1.4}
+kbd{font:10px var(--f-code);border:1px solid var(--line);border-radius:3px;padding:0 3px}
+.flash{color:var(--bad);font-size:11px;min-height:14px}
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <div class="brand">ACMG<small>Tavtigian · cardio</small></div>
+  <div class="result"><span class="cls" id="cls" data-c="none">—</span><span class="pts" id="pts">0 pts</span></div>
+  <div class="outs">
+    <div class="out"><input id="outShort" readonly aria-label="Resultado corto para copiar"><button class="btn" id="cpShort" type="button">Copiar</button></div>
+    <div class="out long"><input id="outLong" readonly aria-label="Resultado largo para copiar"><button class="btn" id="cpLong" type="button">Copiar</button><button class="btn" id="lang" type="button" title="Idioma de la línea larga">ES</button></div>
+  </div>
+  <div class="quick"><input id="quick" placeholder="Teclea: pvs1 pm2_sup ps3_mod … ↵  ( / para venir aquí)" aria-label="Entrada rápida de criterios" autocomplete="off" spellcheck="false"></div>
+  <input class="varin" id="variant" placeholder="Variante (opcional): gen · hg38 · c. · p." aria-label="Variante" autocomplete="off">
+  <div class="tools">
+    <button class="btn" id="guideBtn" type="button" title="Muestra la explicación de cada criterio">Guía</button>
+    <button class="btn" id="nrBtn" type="button" title="Oculta los no recomendados en cardio">Ocultar no rec.</button>
+    <button class="btn" id="clear" type="button">Limpiar</button>
+  </div>
+</header>
+
+<main class="grid" id="grid">
+  <div class="col" id="c1"></div>
+  <div class="col" id="c2"></div>
+  <div class="col" id="c3"></div>
+  <div class="col" id="c4">
+    <section class="blk">
+      <h3>Recuento</h3>
+      <div class="tally" id="tally"></div>
+      <div class="scale" id="scale"></div>
+      <div class="scale-n"><span>≤ −7</span><span>0</span><span>≥ 10</span></div>
+      <ul class="warns" id="warns"></ul>
+      <div class="flash" id="flash" role="status"></div>
+    </section>
+    <section class="blk">
+      <h3>Detalle</h3>
+      <div class="detail" id="detail"><p class="hint">Pulsa <b>?</b> en un criterio para ver su definición, umbrales y referencia. Pulsa el código para marcarlo con su fuerza por defecto (borde marcado), o elige otra fuerza en sus botones.</p>
+      <p class="hint">Atajos: <kbd>/</kbd> entrada rápida · <kbd>Esc</kbd> sale · <kbd>Alt</kbd>+<kbd>C</kbd> copia la línea corta · <kbd>Alt</kbd>+<kbd>L</kbd> limpia.</p></div>
+    </section>
+    <section class="blk refs">
+      Puntos (Tavtigian 2020): VS 8 · S 4 · M 2 · Sup 1; benignas −4 / −2 / −1; stand-alone = Benign. Clases: P ≥ 10 · LP 6–9 · Hot-VUS 4–5 · VUS 0–3 · LB −1 a −6 · B ≤ −7.
+      Richards 2015 · Tavtigian 2018/2020 · Kelly 2018 (MYH7 VCEP) · Abou Tayoun 2018 (PVS1) · Brnich 2020 (PS3/BS3) · Pejaver 2022 (PP3/BP4) · Walker 2023 (splicing) · ClinGen SVI (PM2, PM3, PS2/PM6).
+    </section>
+  </div>
+</main>
+
+<script id="acmg-engine">
+/* ENGINE START */
+const ACMGEngine = (() => {
+  const LEVELS = {
+    VS: { pts: 8, chip: "VS", suf: "vst", long: "Very_Strong" },
+    S:  { pts: 4, chip: "Str", suf: "str", long: "Strong" },
+    M:  { pts: 2, chip: "Mod", suf: "mod", long: "Moderate" },
+    P:  { pts: 1, chip: "Sup", suf: "sup", long: "Supporting" },
+    SA: { pts: 0, chip: "SA", suf: "sa", long: "Stand_Alone" },
+  };
+  // Fuerza nativa por prefijo ACMG: el sufijo solo se escribe cuando la fuerza aplicada difiere de esta.
+  const nativeOf = (code) => code.startsWith("PVS") ? "VS" : code.startsWith("PS") ? "S" : code.startsWith("PM") ? "M"
+    : code.startsWith("PP") ? "P" : code.startsWith("BA") ? "SA" : code.startsWith("BS") ? "S" : code === "BP1_TTN" ? "SA" : "P";
+
+  const C = (code, block, sub, levels, def, short, guide, nr) => ({ code, side: code[0] === "P" ? "P" : "B", block, sub, levels, def, short, guide, nr: nr || [] });
+  const ALL = ["VS", "S", "M", "P"];
+  const SMP = ["S", "M", "P"];
+  const CRITERIA = [
+    // ---- Población
+    C("PM2", "pop", null, ["P"], "P", "Ausente / FAF < 0,00004 (grpmax)", "Ausente o extremadamente rara en población control (gnomAD, FAF grpmax < 0,00004 en la hoja local; umbral de la VCEP de miocardiopatías para MYH7). ClinGen SVI (2020): PM2 se aplica solo a nivel Supporting."),
+    C("BS1", "pop", null, ["S", "P"], "S", "FAF > 0,0001 (grpmax)", "Frecuencia mayor de la esperada para la enfermedad. Umbral de la hoja local: FAF grpmax > 0,0001. El umbral depende de prevalencia, penetrancia y heterogeneidad (calcúlalo por gen si hace falta)."),
+    C("BA1", "pop", null, ["SA"], "SA", "FAF > 0,001 (grpmax)", "Frecuencia alélica > 0,1 % (FAF grpmax) en población: benigna por sí sola. Ojo con fundadoras patogénicas conocidas (p. ej. TTR p.(Val142Ile)), que la ClinGen SVI excluye de BA1."),
+    // ---- Casos / controles
+    C("PS4", "cc", null, SMP, "S", "≥15 / ≥6 / ≥2 probandos o OR", "Prevalencia en afectados significativamente mayor que en controles. Por recuento de probandos (VCEP miocardiopatías, MYH7): Strong ≥ 15, Moderate ≥ 6, Supporting ≥ 2. Por caso-control: OR significativa (IC 95 % > 1) → Strong."),
+    C("BS2", "cc", null, ["S", "P"], "S", "Observada en individuo sano adulto", "Observada en adulto sano en un trastorno de penetrancia completa a edad temprana. En miocardiopatías la penetrancia es incompleta y dependiente de la edad: no se recomienda."),
+    // ---- Segregación
+    C("PP1", "seg", null, SMP, "P", "≥7 / ≥5 / ≥3 meiosis", "Cosegregación con la enfermedad en varios familiares afectados. Strong ≥ 7 meiosis informativas, Moderate ≥ 5, Supporting ≥ 3 (VCEP miocardiopatías; equivalente a LOD ≈ 2,1 / 1,5 / 0,9)."),
+    C("BS4", "seg", null, ["S", "P"], "S", "No segrega (≥2 afectados)", "Ausencia de segregación en afectados de la familia. Cuidado con fenocopias y con la penetrancia incompleta (un portador sano no es no-segregación)."),
+    // ---- De novo
+    C("PS2", "dn", null, ALL, "S", "De novo, paternidad confirmada", "De novo con maternidad y paternidad confirmadas, en paciente con la enfermedad y sin historia familiar. La fuerza sale de los puntos de la ClinGen SVI (v1.1) según el número de casos y la especificidad del fenotipo."),
+    C("PM6", "dn", null, ALL, "M", "De novo asumida (sin confirmar)", "De novo asumida, sin confirmar maternidad ni paternidad. Misma escala de puntos SVI que PS2; un mismo caso se cuenta por PS2 o por PM6, no por los dos."),
+    // ---- Tipo de variante
+    C("PVS1", "tipo", "Truncante / null", ALL, "VS", "Null en gen con LoF como mecanismo", "Variante nula (nonsense, frameshift, ±1/2 de splicing, codón de inicio, deleción multiexónica) en un gen donde la LoF es mecanismo de enfermedad. La fuerza sale del árbol de Abou Tayoun 2018 (NMD, último exón, región crítica, exón en isoforma relevante). Datos de ARN que muestran transcrito LoF: PVS1 con su fuerza (Walker 2023)."),
+    C("PS1", "tipo", "Missense", SMP, "S", "Mismo AA que una P establecida", "Mismo cambio de aminoácido que una variante patogénica establecida, por otro cambio de nucleótido. Walker 2023 la extiende a splicing: variante con el mismo efecto previsto sobre el splicing que una P conocida (en la misma posición). Nunca junto a PVS1."),
+    C("PM5", "tipo", "Missense", SMP, "M", "Otro AA en residuo con P conocida", "Missense nueva en un residuo donde otra missense es patogénica. Supporting si la de referencia solo es LP o el cambio es menos grave según Grantham."),
+    C("PP2", "tipo", "Missense", ["P"], "P", "Missense en gen con poca missense benigna", "Missense en un gen con baja tasa de missense benigna y en el que la missense es mecanismo frecuente de enfermedad.", ["P"]),
+    C("BP1", "tipo", "Missense", ["P"], "P", "Missense en gen de mecanismo truncante", "Missense en un gen en el que solo las truncantes causan la enfermedad."),
+    C("BP1_TTN", "tipo", "Missense", ["SA"], "SA", "Missense en TTN (regla local)", "Regla del laboratorio: una missense en TTN no explica una miocardiopatía y es benigna por sí sola (stand-alone). No es criterio ACMG publicado: en el informe se cita como regla local."),
+    C("PM1", "tipo", "Hot-spot / dominio", SMP, "M", "Hot-spot o dominio sin benignas", "En hot-spot mutacional o dominio funcional crítico sin variación benigna. Con PP3, la suma PM1 + PP3 no pasa de Strong, 4 puntos (Pejaver 2022)."),
+    C("PM4", "tipo", "Indel / stop-loss", ["M", "P"], "M", "Indel en marco o stop-loss, no repetitiva", "Cambia la longitud de la proteína: deleción o inserción en marco fuera de una región repetitiva, o pérdida del codón de parada."),
+    C("BP3", "tipo", "Indel / stop-loss", ["P"], "P", "Indel en marco en región repetitiva", "Deleción o inserción en marco en región repetitiva sin función conocida.", ["P"]),
+    C("BP7", "tipo", "Sinónima / intrónica", ["P"], "P", "Sinónima sin efecto en splicing", "Sinónima (o intrónica fuera de +7/−21, Walker 2023) sin efecto previsto en el splicing y en un nucleótido no muy conservado. Walker 2023 permite usarla también con ARN que no muestra efecto. No se combina con BP4: es la misma predicción."),
+    C("PM3", "tipo", "Recesiva", ALL, "M", "En trans con P (recesiva)", "Recesiva: detectada en trans con una variante patogénica. La fuerza sale de los puntos de la ClinGen SVI para PM3 (fase confirmada, clase de la otra variante, homocigotos)."),
+    // ---- Funcional
+    C("PS3", "fun", null, SMP, "S", "Ensayo funcional bien establecido: daña", "Estudio funcional bien establecido que muestra efecto deletéreo. La fuerza sale de la OddsPath calibrada del ensayo (Brnich 2020): Strong ≥ 18,7, Moderate ≥ 4,3, Supporting ≥ 2,1."),
+    C("BS3", "fun", null, SMP, "S", "Ensayo funcional bien establecido: normal", "Estudio funcional bien establecido sin efecto deletéreo. La fuerza sale de la OddsPath (Brnich 2020): Strong ≤ 0,053, Moderate ≤ 0,23, Supporting ≤ 0,48."),
+    // ---- Predictores
+    C("PP3", "pred", null, SMP, "P", "Predictores: deletéreo", "Evidencia computacional de efecto deletéreo. REVEL (Pejaver 2022): Supporting ≥ 0,644, Moderate ≥ 0,773, Strong ≥ 0,932. Splicing: SpliceAI ≥ 0,2 (Walker 2023). En cardio la hoja local usa solo Supporting. No se combina con PVS1 por la misma evidencia.", ["S", "M"]),
+    C("BP4", "pred", null, SMP, "P", "Predictores: benigno", "Evidencia computacional de ausencia de efecto. REVEL (Pejaver 2022): Supporting ≤ 0,290, Moderate ≤ 0,183, Strong ≤ 0,016. Splicing: SpliceAI ≤ 0,1 (Walker 2023). En cardio la hoja local usa solo Supporting.", ["S", "M"]),
+    // ---- Otros
+    C("PP4", "otros", null, ["P"], "P", "Fenotipo muy específico", "Fenotipo o historia familiar muy específicos de una enfermedad con una sola etiología genética. Las miocardiopatías son genéticamente heterogéneas: no se recomienda.", ["P"]),
+    C("PP5", "otros", null, ["P"], "P", "Fuente reputada: patogénica", "Fuente reputada que la da por patogénica sin aportar la evidencia. Retirado por la ClinGen SVI (Biesecker 2018): se usa la evidencia primaria.", ["P"]),
+    C("BP6", "otros", null, ["P"], "P", "Fuente reputada: benigna", "Fuente reputada que la da por benigna sin aportar la evidencia. Retirado por la ClinGen SVI (Biesecker 2018).", ["P"]),
+    C("BP2", "otros", null, ["P"], "P", "En trans con P (AD) / en cis con P", "En trans con una patogénica en un gen dominante de penetrancia completa, o en cis con una patogénica en cualquier herencia. En cardio hay dobles portadores con fenotipo más grave: no se recomienda.", ["P"]),
+    C("BP5", "otros", null, ["P"], "P", "Caso con otra explicación molecular", "En un caso con otra causa molecular. En cardio la enfermedad puede ser oligogénica y dosis-dependiente: no se recomienda.", ["P"]),
+  ];
+  const BY = Object.fromEntries(CRITERIA.map((c) => [c.code, c]));
+  const ORDER = CRITERIA.map((c) => c.code);
+  const canon = ["PVS1","PS1","PS2","PS3","PS4","PM1","PM2","PM3","PM4","PM5","PM6","PP1","PP2","PP3","PP4","PP5","BA1","BP1_TTN","BS1","BS2","BS3","BS4","BP1","BP2","BP3","BP4","BP5","BP6","BP7"];
+
+  // Pares que no pueden ir juntos: misma evidencia contada dos veces, o hechos contradictorios sobre la misma variante.
+  const PAIRS = [
+    ["PM2","BS1","una frecuencia, un criterio"], ["PM2","BA1","una frecuencia, un criterio"], ["BS1","BA1","BA1 ya incluye BS1"],
+    ["PS1","PM5","mismo residuo: o el mismo AA (PS1) o otro (PM5)"],
+    ["PP3","BP4","los predictores van en un sentido"], ["PS3","BS3","el ensayo da un resultado"], ["PP1","BS4","la segregación va en un sentido"],
+    ["PS2","PM6","un de novo es confirmado o asumido"], ["PM4","BP3","región repetitiva o no"], ["BP1","BP1_TTN","BP1_TTN ya es la versión TTN"],
+    ["PP2","BP1","mecanismo missense frente a solo truncante"], ["PP2","BP1_TTN","mecanismo missense frente a regla TTN"], ["PP5","BP6","fuente reputada en un sentido"],
+    ["PVS1","PP3","PVS1 ya cuenta el efecto previsto (Walker 2023)"], ["PVS1","BP4","null frente a predicción benigna"],
+    ["BP7","PP3","BP7 exige que no se prevea efecto en splicing"], ["PVS1","PS1","nunca juntas (JPO 15-nov-2026)"], ["BP7","BP4","la misma predicción de splicing, contada una vez (JPO 15-nov-2026)"], ["BP7","PS1","BP7 niega el efecto en splicing que PS1 afirma"],
+  ];
+  const TYPES = { PVS1: "null", PM4: "inframe", BP3: "inframe", PM5: "missense", PP2: "missense", BP1: "missense", BP1_TTN: "missense", PM1: "missense_inframe", BP7: "synonymous" };
+  const typeClash = (a, b) => {
+    const ta = TYPES[a], tb = TYPES[b];
+    if (!ta || !tb || a === b) return false;
+    if (ta === tb) return false;
+    const ok = (x, y) => (x === "missense_inframe" && (y === "missense" || y === "inframe")) || (y === "missense_inframe" && (x === "missense" || x === "inframe"));
+    return !ok(ta, tb);
+  };
+  const TYPE_NAME = { null: "null", inframe: "indel en marco", missense: "missense", missense_inframe: "missense / en marco", synonymous: "sinónima" };
+  function conflict(a, b) {
+    for (const [x, y, why] of PAIRS) if ((x === a && y === b) || (x === b && y === a)) return why;
+    if (typeClash(a, b)) return `tipo de variante: ${TYPE_NAME[TYPES[a]]} frente a ${TYPE_NAME[TYPES[b]]}`;
+    return null;
+  }
+  function blockers(state, code) {
+    const out = [];
+    for (const k of Object.keys(state)) { if (k === code) continue; const why = conflict(code, k); if (why) out.push({ code: k, why }); }
+    return out;
+  }
+
+  // state: { CODE: { l: "S"|"M"|..., src?: "texto de procedencia" } }
+  function select(state, code, level, src) {
+    const c = BY[code];
+    if (!c) throw new Error(`criterio desconocido: ${code}`);
+    const l = level || c.def;
+    if (!c.levels.includes(l)) throw new Error(`${code} no admite fuerza ${l}`);
+    const b = blockers(state, code);
+    if (b.length) { const e = new Error(`${code} choca con ${b.map((x) => x.code).join(", ")}: ${b[0].why}`); e.blockers = b; throw e; }
+    return { ...state, [code]: src ? { l, src } : { l } };
+  }
+  function toggle(state, code, level) {
+    const c = BY[code], l = level || c.def;
+    if (state[code] && state[code].l === l) { const s = { ...state }; delete s[code]; return s; }
+    return select(state, code, l);
+  }
+
+  const CLASSES = [
+    { id: "P",    min: 10,   short: "P",       es: "Patogénica",                 en: "Pathogenic" },
+    { id: "LP",   min: 6,    short: "LP",      es: "Probablemente patogénica",   en: "Likely pathogenic" },
+    { id: "HVUS", min: 4,    short: "Hot-VUS", es: "VUS (hot)",                  en: "VUS (hot)" },
+    { id: "VUS",  min: 0,    short: "VUS",     es: "Significado incierto (VUS)", en: "Uncertain significance (VUS)" },
+    { id: "LB",   min: -6,   short: "LB",      es: "Probablemente benigna",      en: "Likely benign" },
+    { id: "B",    min: -Infinity, short: "B",  es: "Benigna",                    en: "Benign" },
+  ];
+  const pointsOf = (code, l) => { const p = LEVELS[l].pts; return BY[code].side === "P" ? p : -p; };
+
+  function score(state) {
+    const codes = Object.keys(state);
+    const counts = { P: { VS: 0, S: 0, M: 0, P: 0 }, B: { SA: 0, S: 0, M: 0, P: 0 } };
+    let pPts = 0, bPts = 0; const warns = [];
+    for (const k of codes) { const c = BY[k], l = state[k].l; counts[c.side][l] += 1; const p = pointsOf(k, l); if (p > 0) pPts += p; else bPts += p; }
+    let capped = 0;
+    if (state.PM1 && state.PP3) {
+      const sum = pointsOf("PM1", state.PM1.l) + pointsOf("PP3", state.PP3.l);
+      if (sum > 4) { capped = sum - 4; pPts -= capped; warns.push({ t: `PM1 + PP3 = ${sum} pts, se quedan en 4 (techo Strong, Pejaver 2022)` }); }
+    }
+    const standalone = codes.filter((k) => state[k].l === "SA");
+    const total = pPts + bPts;
+    let cls;
+    if (standalone.length) {
+      cls = CLASSES.find((x) => x.id === "B");
+      if (pPts > 0) warns.push({ t: `${standalone.join(", ")} es stand-alone y hay evidencia patogénica: revisar`, bad: true });
+    } else cls = CLASSES.find((x) => total >= x.min);
+    if (!standalone.length && pPts > 0 && bPts < 0) warns.push({ t: `Evidencia en conflicto: +${pPts} patogénica y ${bPts} benigna` });
+    const nr = codes.filter((k) => BY[k].nr.includes(state[k].l));
+    if (nr.length) warns.push({ t: `No recomendado en cardio: ${nr.map((k) => label(k, state[k].l)).join(", ")}` });
+    return { pPts, bPts, total, capped, standalone, cls, counts, warns, n: codes.length };
+  }
+
+  function label(code, l, style) {
+    if (l === nativeOf(code)) return code;
+    return style === "long" ? `${code}_${LEVELS[l].long}` : `${code}_${LEVELS[l].suf}`;
+  }
+  function ordered(state) {
+    return Object.keys(state).sort((a, b) => {
+      const sa = BY[a].side, sb = BY[b].side;
+      if (sa !== sb) return sa === "P" ? -1 : 1;
+      const pa = Math.abs(pointsOf(a, state[a].l)) || 99, pb = Math.abs(pointsOf(b, state[b].l)) || 99;
+      if (pa !== pb) return pb - pa;
+      return canon.indexOf(a) - canon.indexOf(b);
+    });
+  }
+  function format(state, opts) {
+    const o = opts || {};
+    const s = score(state);
+    const list = ordered(state).map((k) => label(k, state[k].l, o.style)).join(", ");
+    const pre = o.variant ? `${o.variant.trim()}: ` : "";
+    if (!s.n) return "";
+    if (o.style === "long") {
+      const name = o.lang === "en" ? s.cls.en : s.cls.es;
+      const pts = s.standalone.length ? "stand-alone" : `${s.total} ${o.lang === "en" ? "points" : "puntos"}`;
+      const sys = o.lang === "en" ? "ACMG/AMP point system, Tavtigian 2020" : "ACMG/AMP por puntos, Tavtigian 2020";
+      return `${pre}${name} (${list}) · ${pts} (${sys})`;
+    }
+    return `${pre}${s.cls.short} (${list})`;
+  }
+
+  // Entrada rápida: "pvs1 pm2_s ps3_m bp1_ttn" — admite sufijo de 3 letras (_vst _str _mod _sup; JPO 15-nov-2026: «s y s se confunden») y largo ClinGen (_Strong, _Supporting…).
+  const SUF = { vst: "VS", vs: "VS", verystrong: "VS", very_strong: "VS", str: "S", strong: "S", mod: "M", moderate: "M", sup: "P", supporting: "P", sa: "SA", standalone: "SA", stand_alone: "SA" };
+  function parseToken(tok) {
+    const t = tok.trim().replace(/[,;.]+$/, ""); if (!t) return null;
+    const m = t.match(/^(PVS1|PS[1-4]|PM[1-6]|PP[1-5]|BA1|BS[1-4]|BP[1-7])(?:[_-]?(TTN))?(?:[_-]([A-Za-z_]+))?$/i);
+    if (!m) return { err: t };
+    let code = m[1].toUpperCase(); if (m[2]) code += "_TTN";
+    if (!BY[code]) return { err: t };
+    let l = BY[code].def;
+    if (m[3]) { const k = m[3].toLowerCase(); if (!(k in SUF)) return { err: t }; l = SUF[k]; }
+    if (!BY[code].levels.includes(l)) return { err: t, why: `${code} no admite ${LEVELS[l].long}` };
+    return { code, l };
+  }
+  function parse(text, base) {
+    let state = { ...(base || {}) }; const errors = [];
+    for (const tok of String(text).split(/[\s,;()]+/)) {
+      const r = parseToken(tok); if (!r) continue;
+      if (r.err) { errors.push(r.why || `no reconozco «${r.err}»`); continue; }
+      try { state = { ...state }; delete state[r.code]; state = select(state, r.code, r.l); } catch (e) { errors.push(e.message); }
+    }
+    return { state, errors };
+  }
+
+  // Hash para compartir o prellenar: #c-PVS1-PM2sup-PS3mod (solo letras, dígitos y guiones).
+  const HSUF = { VS: "vst", S: "str", M: "mod", P: "sup", SA: "sa" };
+  function toHash(state) {
+    const ks = ordered(state); if (!ks.length) return "";
+    return "c-" + ks.map((k) => k.replace("_", "") + (state[k].l === BY[k].def ? "" : HSUF[state[k].l])).join("-");
+  }
+  function fromHash(h) {
+    const s = String(h || "").replace(/^#/, ""); if (!s.startsWith("c-")) return {};
+    const toks = s.slice(2).split("-").map((t) => { const m = t.match(/^(BP1TTN|PVS1|PS[1-4]|PM[1-6]|PP[1-5]|BA1|BS[1-4]|BP[1-7])(vst|str|mod|sup|sa)?$/i); if (!m) return t; const code = m[1].toUpperCase().replace("BP1TTN", "BP1_TTN"); return m[2] ? `${code}_${m[2]}` : code; });
+    return parse(toks.join(" ")).state;
+  }
+
+  return { LEVELS, CRITERIA, BY, ORDER, CLASSES, nativeOf, conflict, blockers, select, toggle, score, label, format, parse, toHash, fromHash };
+})();
+if (typeof module !== "undefined") module.exports = ACMGEngine;
+/* ENGINE END */
+</script>
+
+<script>
+(() => {
+  const E = ACMGEngine;
+  const $ = (id) => document.getElementById(id);
+  let state = {};
+  let lang = "es";
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+  const BLOCKS = [
+    ["c1", "pop", "Población"], ["c1", "cc", "Casos / controles"], ["c1", "seg", "Segregación"], ["c1", "dn", "De novo"],
+    ["c2", "tipo", "Tipo de variante"],
+    ["c3", "fun", "Funcional"], ["c3", "pred", "Predictores (solo Supporting en cardio)"], ["c3", "otros", "Otros"],
+  ];
+  const rows = {};
+  for (const [col, id, title] of BLOCKS) {
+    const sec = document.createElement("section"); sec.className = "blk";
+    sec.innerHTML = `<h3>${title}</h3>`;
+    let sub = null;
+    for (const c of E.CRITERIA.filter((x) => x.block === id)) {
+      if (c.sub && c.sub !== sub) { sub = c.sub; const h = document.createElement("h4"); h.textContent = sub; sec.appendChild(h); }
+      const r = document.createElement("div"); r.className = "crit" + (c.nr.length === c.levels.length ? " nr" : ""); r.dataset.code = c.code;
+      const b = c.side === "B" ? " b" : "";
+      r.innerHTML = `<button class="code${b}" type="button" title="Marcar ${c.code} con su fuerza por defecto">${c.code}</button>`
+        + `<span class="lbl">${c.short}</span>`
+        + `<span class="chips">${c.levels.map((l) => `<button type="button" class="chip${b}${l === c.def ? " def" : ""}${c.nr.includes(l) ? " nr" : ""}" data-l="${l}" title="${E.label(c.code, l, "long")} (${l === "SA" ? "stand-alone" : (c.side === "P" ? "+" : "−") + E.LEVELS[l].pts})">${E.LEVELS[l].chip}</button>`).join("")}</span>`
+        + `<button class="info" type="button" aria-label="Detalle de ${c.code}">?</button>`
+        + `<div class="guide">${c.guide}</div>`;
+      sec.appendChild(r); rows[c.code] = r;
+    }
+    $(col).appendChild(sec);
+  }
+
+  function flash(msg) { $("flash").textContent = msg || ""; }
+  function set(next) { state = next; render(); }
+
+  document.addEventListener("click", (ev) => {
+    const r = ev.target.closest(".crit"); if (!r) return;
+    const code = r.dataset.code;
+    if (ev.target.closest(".info")) { showDetail(code); return; }
+    let l = null;
+    const chip = ev.target.closest(".chip"); if (chip) { if (chip.disabled) return; l = chip.dataset.l; }
+    else if (!ev.target.closest(".code")) return;
+    try { set(E.toggle(state, code, l)); flash(""); } catch (e) { flash(e.message); }
+  });
+
+  function showDetail(code) {
+    const c = E.BY[code];
+    const conf = E.CRITERIA.filter((x) => x.code !== code && E.conflict(code, x.code)).map((x) => x.code);
+    $("detail").innerHTML = `<p><b class="c">${c.code}</b> · ${c.short}</p><p>${c.guide}</p>`
+      + `<p class="meta">Fuerzas: ${c.levels.map((l) => E.label(c.code, l, "long") + (l === c.def ? " (por defecto)" : "") + (c.nr.includes(l) ? " — no rec. cardio" : "")).join(" · ")}</p>`
+      + (conf.length ? `<p class="meta">No va con: ${conf.join(", ")}</p>` : "")
+      + (state[code] && state[code].src ? `<p class="meta">Prellenado: ${state[code].src}</p>` : "");
+  }
+
+  function render() {
+    for (const c of E.CRITERIA) {
+      const r = rows[c.code], sel = state[c.code];
+      const bl = sel ? [] : E.blockers(state, c.code);
+      r.classList.toggle("blocked", bl.length > 0);
+      r.classList.toggle("auto", !!(sel && sel.src));
+      r.querySelector(".code").disabled = bl.length > 0;
+      r.querySelector(".code").title = bl.length ? `Bloqueado por ${bl.map((x) => x.code).join(", ")}: ${bl[0].why}` : `Marcar ${c.code} con su fuerza por defecto`;
+      for (const ch of r.querySelectorAll(".chip")) {
+        ch.classList.toggle("sel", !!(sel && sel.l === ch.dataset.l));
+        ch.disabled = bl.length > 0;
+        ch.setAttribute("aria-pressed", sel && sel.l === ch.dataset.l ? "true" : "false");
+        if (bl.length) ch.title = `Bloqueado por ${bl.map((x) => x.code).join(", ")}: ${bl[0].why}`;
+        else ch.title = `${E.label(c.code, ch.dataset.l, "long")} (${ch.dataset.l === "SA" ? "stand-alone" : (c.side === "P" ? "+" : "−") + E.LEVELS[ch.dataset.l].pts})`;
+      }
+    }
+    const s = E.score(state);
+    $("cls").dataset.c = s.n ? s.cls.id : "none";
+    $("cls").textContent = s.n ? s.cls.short : "—";
+    $("pts").textContent = s.standalone.length ? "stand-alone" : `${s.total > 0 ? "+" : ""}${s.total} pts`;
+    const variant = $("variant").value;
+    $("outShort").value = s.n ? E.format(state, { variant }) : "";
+    $("outShort").placeholder = "Marca criterios: aquí sale p. ej. LP (PVS1, PM2_sup)";
+    $("outLong").value = s.n ? E.format(state, { style: "long", lang, variant }) : "";
+    const cP = s.counts.P, cB = s.counts.B;
+    $("tally").innerHTML = `<span></span><span class="h">VS/SA</span><span class="h">Str</span><span class="h">Mod</span><span class="h">Sup</span><span class="h tot">pts</span>`
+      + `<span class="h">Pat.</span><span>${cP.VS}</span><span>${cP.S}</span><span>${cP.M}</span><span>${cP.P}</span><span class="tot">+${s.pPts}</span>`
+      + `<span class="h">Ben.</span><span>${cB.SA}</span><span>${cB.S}</span><span>${cB.M}</span><span>${cB.P}</span><span class="tot">${s.bPts}</span>`;
+    const segs = [["B", -10, -7, "var(--bsa)", "var(--bsa-fg)"], ["LB", -6, -1, "var(--bmo)", "var(--bmo-fg)"], ["VUS", 0, 3, "var(--off)", "var(--fg)"], ["Hot", 4, 5, "var(--mo)", "var(--mo-fg)"], ["LP", 6, 9, "#d9822b", "#fff"], ["P", 10, 12, "var(--bad)", "#fff"]];
+    const span = 23; // -10 … 12
+    const v = s.standalone.length ? -10 : Math.max(-10, Math.min(12, s.total));
+    $("scale").innerHTML = segs.map(([t, a, b, bg, fg]) => `<span style="flex:${b - a + 1};background:${bg};color:${fg}">${t}</span>`).join("")
+      + `<i class="mk" style="left:calc(${((v + 10 + 0.5) / span) * 100}% - 1.5px)"></i>`;
+    $("warns").innerHTML = s.warns.map((w) => `<li class="${w.bad ? "bad" : ""}">${w.t}</li>`).join("");
+    applyNr();
+    try { const h = E.toHash(state); history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (e) {}
+  }
+
+  function copy(id, btn) {
+    const el = $(id); if (!el.value) return;
+    const done = () => { const t = btn.textContent; btn.textContent = "Copiado"; setTimeout(() => (btn.textContent = t), 900); };
+    const fallback = () => { el.focus(); el.select(); try { document.execCommand("copy"); done(); } catch (e) { flash("Selecciona el texto y cópialo con Ctrl+C"); } };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(done, fallback); else fallback();
+  }
+  $("cpShort").onclick = () => copy("outShort", $("cpShort"));
+  $("cpLong").onclick = () => copy("outLong", $("cpLong"));
+  for (const id of ["outShort", "outLong"]) $(id).addEventListener("focus", (e) => e.target.select());
+  $("lang").onclick = () => { lang = lang === "es" ? "en" : "es"; $("lang").textContent = lang.toUpperCase(); render(); };
+  $("clear").onclick = () => { set({}); flash(""); };
+  $("variant").addEventListener("input", render);
+
+  const quick = $("quick");
+  quick.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const r = E.parse(quick.value, state);
+      set(r.state);
+      quick.classList.toggle("err", r.errors.length > 0);
+      flash(r.errors.join(" · "));
+      if (!r.errors.length) quick.value = "";
+    } else if (e.key === "Escape") { quick.blur(); }
+  });
+  document.addEventListener("keydown", (e) => {
+    const typing = /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+    if (e.key === "/" && !typing) { e.preventDefault(); quick.focus(); }
+    else if (e.altKey && (e.key === "c" || e.key === "C")) { e.preventDefault(); copy("outShort", $("cpShort")); }
+    else if (e.altKey && (e.key === "l" || e.key === "L")) { e.preventDefault(); set({}); }
+  });
+
+  const toggleClass = (btn, cls, key) => { const on = document.body.classList.toggle(cls); btn.classList.toggle("on", on); store.set(key, on ? "1" : "0"); };
+  $("guideBtn").onclick = () => toggleClass($("guideBtn"), "g", "acmg.guide");
+  $("nrBtn").onclick = () => { const on = !$("nrBtn").classList.contains("on"); $("nrBtn").classList.toggle("on", on); store.set("acmg.hidenr", on ? "1" : "0"); applyNr(); };
+  function applyNr() { const on = $("nrBtn").classList.contains("on"); for (const c of E.CRITERIA) if (c.nr.length === c.levels.length) rows[c.code].hidden = on && !state[c.code]; }
+  if (store.get("acmg.guide") === "1") { document.body.classList.add("g"); $("guideBtn").classList.add("on"); }
+  if (store.get("acmg.hidenr") === "1") { $("nrBtn").classList.add("on"); }
+
+  // Fase 2: una herramienta externa prellena con window.ACMG.prefill({PM2: {l: "P", src: "gnomAD FAF 0,00001"}}, "MYH7 c.1208G>A p.(Arg403Gln)")
+  // o con postMessage({type: "acmg:prefill", criteria: {...}, variant: "..."}).
+  function prefill(crit, variant) {
+    let s = {};
+    for (const [k, v] of Object.entries(crit || {})) { try { s = E.select(s, k, v && v.l, v && v.src); } catch (e) { flash(e.message); } }
+    if (variant != null) $("variant").value = variant;
+    set(s);
+  }
+  window.ACMG = { prefill, get: () => JSON.parse(JSON.stringify(state)), engine: E };
+  window.addEventListener("message", (ev) => { const d = ev.data; if (d && d.type === "acmg:prefill") prefill(d.criteria, d.variant); });
+
+  state = E.fromHash(location.hash);
+  if (!Object.keys(state).length) state = E.parse("PVS1 PM2_s").state; // ejemplo al abrir
+  render();
+})();
+</script>
+
+</body>
+</html>
