@@ -42,7 +42,7 @@ button{font:inherit;color:inherit}
 .cls[data-c="VUS"]{background:var(--off);color:var(--fg)}
 .cls[data-c="LB"]{background:var(--bmo);color:var(--bmo-fg)}
 .cls[data-c="B"]{background:var(--bsa);color:var(--bsa-fg)}
-.pts{font:700 13px var(--f-code);color:var(--muted);white-space:nowrap}
+.pts{font:600 11.5px var(--f-body);color:var(--muted);min-width:0}
 .outs{display:flex;flex-direction:column;gap:3px;flex:1 1 420px;min-width:0}
 .out{display:flex;gap:6px;align-items:center;min-width:0}
 .out input{flex:1;min-width:0;font:600 13px var(--f-code);padding:4px 7px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
@@ -115,8 +115,8 @@ kbd{font:10px var(--f-code);border:1px solid var(--line);border-radius:3px;paddi
 </head>
 <body>
 <header class="top" id="top">
-  <div class="brand">ACMG<small>Tavtigian · cardio</small></div>
-  <div class="result"><span class="cls" id="cls" data-c="none">—</span><span class="pts" id="pts">0 pts</span></div>
+  <div class="brand">ACMG<small>Richards 2015 + SVI · cardio</small></div>
+  <div class="result"><span class="cls" id="cls" data-c="none">—</span><span class="pts" id="pts"></span></div>
   <div class="outs">
     <div class="out"><input id="outShort" readonly data-i18n-aria="ariaShort"><button class="btn" id="cpShort" type="button" data-i18n="copy">Copiar</button></div>
     <div class="out long"><input id="outLong" readonly data-i18n-aria="ariaLong"><button class="btn" id="cpLong" type="button" data-i18n="copy">Copiar</button></div>
@@ -140,7 +140,7 @@ kbd{font:10px var(--f-code);border:1px solid var(--line);border-radius:3px;paddi
       <h3 data-i18n="tallyH">Recuento</h3>
       <div class="tally" id="tally"></div>
       <div class="scale" id="scale"></div>
-      <div class="scale-n"><span>≤ −7</span><span>0</span><span>≥ 10</span></div>
+      <div class="scale-n"><span>≤ −7</span><span data-i18n="scaleRef">puntos*, solo referencia</span><span>≥ 10</span></div>
       <ul class="warns" id="warns"></ul>
       <div class="flash" id="flash" role="status"></div>
     </section>
@@ -149,7 +149,7 @@ kbd{font:10px var(--f-code);border:1px solid var(--line);border-radius:3px;paddi
       <div class="detail" id="detail"></div>
     </section>
     <section class="blk refs">
-      <span data-i18n="refsPts">Puntos (Tavtigian 2020): VS 8 · S 4 · M 2 · Sup 1; benignas −4 / −2 / −1; stand-alone = Benign. Clases: P ≥ 10 · LP 6–9 · Hot-VUS 4–5 · VUS 0–3 · LB −1 a −6 · B ≤ −7.</span>
+      <span data-i18n="refsPts"></span>
       Richards 2015 · Tavtigian 2018/2020 · Kelly 2018 (MYH7 VCEP) · Abou Tayoun 2018 (PVS1) · Brnich 2020 (PS3/BS3) · Pejaver 2022 (PP3/BP4) · Walker 2023 (splicing) · ClinGen SVI (PM2, PM3, PS2/PM6).
     </section>
   </div>
@@ -312,27 +312,101 @@ const ACMGEngine = (() => {
   ];
   const pointsOf = (code, l) => { const p = LEVELS[l].pts; return BY[code].side === "P" ? p : -p; };
 
+  // Clase por las REGLAS DE COMBINACIÓN de Richards 2015 (Tabla 5) + ClinGen SVI PM2 v1.0 (2020: «1 Very Strong + 1 Supporting
+  // = Likely pathogenic»). Los puntos de Tavtigian 2020 se calculan solo como referencia (JPO 15-nov-2026: manda la guía, no el número).
+  const RULES = {
+    P_VS_S:   ["PVS + ≥1 Strong", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    P_VS_2M:  ["PVS + ≥2 Moderate", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    P_VS_MP:  ["PVS + 1 Moderate + 1 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    P_VS_2P:  ["PVS + ≥2 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    P_2S:     ["≥2 Strong", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    P_S_3M:   ["1 Strong + ≥3 Moderate", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    P_S_2M2P: ["1 Strong + 2 Moderate + ≥2 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    P_S_M4P:  ["1 Strong + 1 Moderate + ≥4 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    LP_VS_M:  ["PVS + 1 Moderate", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    LP_VS_P:  ["PVS + 1 Supporting", "ClinGen SVI PM2 v1.0, 2020", "ClinGen SVI PM2 v1.0, 2020"],
+    LP_S_M:   ["1 Strong + 1–2 Moderate", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    LP_S_2P:  ["1 Strong + ≥2 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    LP_3M:    ["≥3 Moderate", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    LP_2M2P:  ["2 Moderate + ≥2 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    LP_M4P:   ["1 Moderate + ≥4 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    B_SA:     ["Stand-alone", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    B_2S:     ["≥2 Strong", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    LB_SP:    ["1 Strong + 1 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    LB_2P:    ["≥2 Supporting", "Richards 2015, Tabla 5", "Richards 2015, Table 5"],
+    VUS_NONE: ["ninguna regla se cumple", "Richards 2015, Tabla 5, nota", "Richards 2015, Table 5, footnote", "no rule is met"],
+    VUS_CONTRA: ["evidencia patogénica y benigna contradictoria", "Richards 2015, Tabla 5, nota", "Richards 2015, Table 5, footnote", "contradictory pathogenic and benign evidence"],
+  };
+  const ruleText = (id) => { const r = RULES[id]; const name = LANG === "en" && r[3] ? r[3] : r[0]; return `${name} (${L(r[1], r[2])})`; };
+  function pathRule(v, s, m, p) {
+    if (v >= 2) { s += v - 1; v = 1; } // un segundo Very Strong cuenta como Strong (la Tabla 5 solo prevé uno)
+    if (v >= 1 && s >= 1) return "P_VS_S";
+    if (v >= 1 && m >= 2) return "P_VS_2M";
+    if (v >= 1 && m >= 1 && p >= 1) return "P_VS_MP";
+    if (v >= 1 && p >= 2) return "P_VS_2P";
+    if (s >= 2) return "P_2S";
+    if (s >= 1 && m >= 3) return "P_S_3M";
+    if (s >= 1 && m >= 2 && p >= 2) return "P_S_2M2P";
+    if (s >= 1 && m >= 1 && p >= 4) return "P_S_M4P";
+    if (v >= 1 && m >= 1) return "LP_VS_M";
+    if (v >= 1 && p >= 1) return "LP_VS_P";
+    if (s >= 1 && m >= 1) return "LP_S_M";
+    if (s >= 1 && p >= 2) return "LP_S_2P";
+    if (m >= 3) return "LP_3M";
+    if (m >= 2 && p >= 2) return "LP_2M2P";
+    if (m >= 1 && p >= 4) return "LP_M4P";
+    return null;
+  }
+  function benRule(sa, s, p) {
+    if (sa >= 1) return "B_SA";
+    if (s >= 2) return "B_2S";
+    if (s >= 1 && p >= 1) return "LB_SP";
+    if (p >= 2) return "LB_2P";
+    return null;
+  }
+  const CLS = Object.fromEntries(CLASSES.map((c) => [c.id, c]));
+  const clsOfRule = (id) => CLS[id.split("_")[0]];
+
   function score(state) {
     const codes = Object.keys(state);
-    const counts = { P: { VS: 0, S: 0, M: 0, P: 0 }, B: { SA: 0, S: 0, M: 0, P: 0 } };
-    let pPts = 0, bPts = 0; const warns = [];
-    for (const k of codes) { const c = BY[k], l = state[k].l; counts[c.side][l] += 1; const p = pointsOf(k, l); if (p > 0) pPts += p; else bPts += p; }
-    let capped = 0;
+    const warns = [];
+    // Techo PM1 + PP3 ≤ Strong (Pejaver 2022): en puntos se recorta a 4; en las reglas el par cuenta como UN Strong.
+    let capped = 0, pair = false;
     if (state.PM1 && state.PP3) {
-      const sum = pointsOf("PM1", state.PM1.l) + pointsOf("PP3", state.PP3.l);
-      if (sum > 4) { capped = sum - 4; pPts -= capped; warns.push({ t: L(`PM1 + PP3 = ${sum} pts, se quedan en 4 (techo Strong, Pejaver 2022)`, `PM1 + PP3 = ${sum} pts, capped at 4 (Strong ceiling, Pejaver 2022)`) }); }
+      const sum0 = LEVELS[state.PM1.l].pts + LEVELS[state.PP3.l].pts;
+      if (sum0 > 4) { capped = sum0 - 4; pair = true; warns.push({ t: L(`PM1 + PP3 pasan de Strong: cuentan juntas como un Strong (Pejaver 2022)`, `PM1 + PP3 exceed Strong: counted together as one Strong (Pejaver 2022)`) }); }
     }
-    const standalone = codes.filter((k) => state[k].l === "SA");
+    const counts = { P: { VS: 0, S: 0, M: 0, P: 0 }, B: { SA: 0, S: 0, M: 0, P: 0 } };
+    let pPts = -capped, bPts = 0;
+    for (const k of codes) {
+      const c = BY[k], l = state[k].l, pt = pointsOf(k, l);
+      if (pt > 0) pPts += pt; else bPts += pt;
+      if (!(pair && (k === "PM1" || k === "PP3"))) counts[c.side][l] += 1;
+    }
+    if (pair) counts.P.S += 1;
+    const eff = Object.fromEntries(codes.map((k) => [k, state[k].l]));
+    const standalone = codes.filter((k) => eff[k] === "SA");
     const total = pPts + bPts;
-    let cls;
-    if (standalone.length) {
-      cls = CLASSES.find((x) => x.id === "B");
-      if (pPts > 0) warns.push({ t: L(`${standalone.join(", ")} es stand-alone y hay evidencia patogénica: revisar`, `${standalone.join(", ")} is stand-alone and there is pathogenic evidence: review`), bad: true });
-    } else cls = CLASSES.find((x) => total >= x.min);
-    if (!standalone.length && pPts > 0 && bPts < 0) warns.push({ t: L(`Evidencia en conflicto: +${pPts} patogénica y ${bPts} benigna`, `Conflicting evidence: +${pPts} pathogenic and ${bPts} benign`) });
+    // Puntos (solo referencia).
+    const ptsCls = standalone.length ? CLS.B : CLASSES.find((x) => total >= x.min);
+    // Reglas. La Tabla 5 no tiene Moderate benigno: cuenta como Supporting (lo conservador).
+    const cP = counts.P, cB = counts.B;
+    if (cB.M) warns.push({ t: L("Benigno Moderate no existe en la Tabla 5 de Richards: cuenta como Supporting en las reglas", "Benign Moderate is not in Richards Table 5: counted as Supporting by the rules") });
+    const pr = pathRule(cP.VS, cP.S, cP.M, cP.P);
+    const br = benRule(cB.SA, cB.S, cB.P + cB.M);
+    let rule;
+    if (br === "B_SA") { rule = "B_SA"; if (pPts > 0) warns.push({ t: L(`${standalone.join(", ")} es stand-alone y hay evidencia patogénica: revisar`, `${standalone.join(", ")} is stand-alone and there is pathogenic evidence: review`), bad: true }); }
+    else if (pr && br) rule = "VUS_CONTRA";
+    else rule = pr || br || "VUS_NONE";
+    let cls = rule.startsWith("VUS") ? CLS.VUS : clsOfRule(rule);
+    if (cls.id === "VUS" && rule === "VUS_NONE" && total >= 4) cls = CLS.HVUS; // Hot-VUS: subclase local de VUS con ≥4 puntos (4–5 si puntos y regla coinciden; PVS1 sola = 8)
+    if (!pr && !br && pPts > 0 && bPts < 0) warns.push({ t: L(`Hay evidencia en los dos sentidos (+${pPts} / ${bPts}): revisar`, `Evidence in both directions (+${pPts} / ${bPts}): review`) });
+    else if ((pr && bPts < 0 && !br) || (br && br !== "B_SA" && pPts > 0 && !pr)) warns.push({ t: L(`Hay evidencia en contra que no llega a clase: revisar`, `There is opposing evidence that does not reach a class: review`) });
+    const sameFamily = (a, b) => a.id === b.id || (a.id === "HVUS" && b.id === "VUS") || (a.id === "VUS" && b.id === "HVUS");
+    if (!sameFamily(cls, ptsCls)) warns.push({ t: L(`Los puntos (Tavtigian 2020) darían ${ptsCls.short}; manda la regla: ${ruleText(rule)}`, `Points (Tavtigian 2020) would give ${ptsCls.short}; the rule decides: ${ruleText(rule)}`) });
     const nr = codes.filter((k) => BY[k].nr.includes(state[k].l));
     if (nr.length) warns.push({ t: L("No recomendado en cardio: ", "Not recommended in cardio: ") + nr.map((k) => label(k, state[k].l)).join(", ") });
-    return { pPts, bPts, total, capped, standalone, cls, counts, warns, n: codes.length };
+    return { pPts, bPts, total, capped, standalone, cls, ptsCls, rule, ruleText: ruleText(rule), counts, warns, n: codes.length };
   }
 
   function label(code, l, style) {
@@ -350,15 +424,17 @@ const ACMGEngine = (() => {
   }
   function format(state, opts) {
     const o = { lang: LANG, ...(opts || {}) };
+    const keep = LANG; LANG = o.lang;
+    try { return formatIn(state, o); } finally { LANG = keep; }
+  }
+  function formatIn(state, o) {
     const s = score(state);
     const list = ordered(state).map((k) => label(k, state[k].l, o.style)).join(", ");
     const pre = o.variant ? `${o.variant.trim()}: ` : "";
     if (!s.n) return "";
     if (o.style === "long") {
       const name = o.lang === "en" ? s.cls.en : s.cls.es;
-      const pts = s.standalone.length ? "stand-alone" : `${s.total} ${o.lang === "en" ? "points" : "puntos"}`;
-      const sys = o.lang === "en" ? "ACMG/AMP point system, Tavtigian 2020" : "ACMG/AMP por puntos, Tavtigian 2020";
-      return `${pre}${name} (${list}) · ${pts} (${sys})`;
+      return `${pre}${name} (${list}) · ${s.ruleText}`;
     }
     return `${pre}${s.cls.short} (${list})`;
   }
@@ -398,7 +474,7 @@ const ACMGEngine = (() => {
     return parse(toks.join(" ")).state;
   }
 
-  return { LEVELS, CRITERIA, BY, ORDER, CLASSES, EN, nativeOf, conflict, blockers, select, toggle, score, label, format, parse, toHash, fromHash, setLang, getLang, text, subText };
+  return { LEVELS, CRITERIA, BY, ORDER, CLASSES, RULES, EN, nativeOf, conflict, blockers, select, toggle, score, label, format, parse, toHash, fromHash, setLang, getLang, text, subText };
 })();
 if (typeof module !== "undefined") module.exports = ACMGEngine;
 /* ENGINE END */
@@ -417,22 +493,22 @@ if (typeof module !== "undefined") module.exports = ACMGEngine;
       hideNrTitle: "Oculta los no recomendados en cardio", clear: "Limpiar", tallyH: "Recuento", detailH: "Detalle",
       quickPh: "Teclea: pvs1 pm2_sup ps3_mod … ↵  ( / para venir aquí)", variantPh: "Variante (opcional): gen · hg38 · c. · p.",
       ariaShort: "Resultado corto para copiar", ariaLong: "Resultado largo para copiar", ariaQuick: "Entrada rápida de criterios", ariaVariant: "Variante",
-      outPh: "Marca criterios: aquí sale p. ej. LP (PVS1, PM2_sup)", nr: " · no rec. cardio", path: "Pat.", ben: "Ben.",
+      outPh: "Marca criterios: aquí sale p. ej. LP (PVS1, PM2_sup)", ptsRef: "pts*", scaleRef: "puntos*, solo referencia", nr: " · no rec. cardio", path: "Pat.", ben: "Ben.",
       mark: (c) => `Marcar ${c} con su fuerza por defecto`, blocked: (b, why) => `Bloqueado por ${b}: ${why}`, info: (c) => `Detalle de ${c}`,
       strengths: "Fuerzas", def: " (por defecto)", nrLong: " — no rec. cardio", notWith: "No va con", prefilled: "Prellenado",
       selectText: "Selecciona el texto y cópialo con Ctrl+C",
-      refsPts: "Puntos (Tavtigian 2020): VS 8 · S 4 · M 2 · Sup 1; benignas −4 / −2 / −1; stand-alone = Benign. Clases: P ≥ 10 · LP 6–9 · Hot-VUS 4–5 · VUS 0–3 · LB −1 a −6 · B ≤ −7.",
+      refsPts: "La clase sale de las reglas de combinación de Richards 2015 (Tabla 5) más la de ClinGen SVI PM2 v1.0 (2020): 1 Very Strong + 1 Supporting = LP. Si benigna y patogénica llegan a clase a la vez: VUS (nota de la Tabla 5). Hot-VUS = VUS con ≥ 4 puntos. *Puntos de Tavtigian 2020 (VS 8 · S 4 · M 2 · Sup 1; benignas −4 / −2 / −1), solo de referencia: si dan otra clase, sale un aviso.",
       hint: `<p class="hint">Pulsa <b>?</b> en un criterio para ver su definición, umbrales y referencia. Pulsa el código para marcarlo con su fuerza por defecto (borde marcado), o elige otra fuerza en sus botones.</p><p class="hint">Atajos: <kbd>/</kbd> entrada rápida · <kbd>Esc</kbd> sale · <kbd>Alt</kbd>+<kbd>C</kbd> copia la línea corta · <kbd>Alt</kbd>+<kbd>L</kbd> limpia.</p>`,
       blocks: { pop: "Población", cc: "Casos / controles", seg: "Segregación", dn: "De novo", tipo: "Tipo de variante", fun: "Funcional", pred: "Predictores (solo Supporting en cardio)", otros: "Otros" } },
     en: { copy: "Copy", copied: "Copied", guide: "Guide", guideTitle: "Show each criterion's explanation", hideNr: "Hide not rec.",
       hideNrTitle: "Hide criteria not recommended in cardio", clear: "Clear", tallyH: "Tally", detailH: "Detail",
       quickPh: "Type: pvs1 pm2_sup ps3_mod … ↵  ( / to jump here)", variantPh: "Variant (optional): gene · hg38 · c. · p.",
       ariaShort: "Short result to copy", ariaLong: "Long result to copy", ariaQuick: "Quick criteria entry", ariaVariant: "Variant",
-      outPh: "Pick criteria: e.g. LP (PVS1, PM2_sup) appears here", nr: " · not rec. cardio", path: "Path.", ben: "Ben.",
+      outPh: "Pick criteria: e.g. LP (PVS1, PM2_sup) appears here", ptsRef: "pts*", scaleRef: "points*, reference only", nr: " · not rec. cardio", path: "Path.", ben: "Ben.",
       mark: (c) => `Apply ${c} at its default strength`, blocked: (b, why) => `Blocked by ${b}: ${why}`, info: (c) => `Details of ${c}`,
       strengths: "Strengths", def: " (default)", nrLong: " — not rec. in cardio", notWith: "Not combinable with", prefilled: "Prefilled",
       selectText: "Select the text and copy it with Ctrl+C",
-      refsPts: "Points (Tavtigian 2020): VS 8 · S 4 · M 2 · Sup 1; benign −4 / −2 / −1; stand-alone = Benign. Classes: P ≥ 10 · LP 6–9 · Hot-VUS 4–5 · VUS 0–3 · LB −1 to −6 · B ≤ −7.",
+      refsPts: "The class comes from the Richards 2015 combining rules (Table 5) plus ClinGen SVI PM2 v1.0 (2020): 1 Very Strong + 1 Supporting = LP. If benign and pathogenic both reach a class: VUS (Table 5 footnote). Hot-VUS = VUS with ≥ 4 points. *Tavtigian 2020 points (VS 8 · S 4 · M 2 · Sup 1; benign −4 / −2 / −1), reference only: if they give another class, a warning appears.",
       hint: `<p class="hint">Press <b>?</b> on a criterion to see its definition, thresholds and reference. Press the code to apply it at its default strength (outlined), or pick another strength with its buttons.</p><p class="hint">Shortcuts: <kbd>/</kbd> quick entry · <kbd>Esc</kbd> leave · <kbd>Alt</kbd>+<kbd>C</kbd> copy the short line · <kbd>Alt</kbd>+<kbd>L</kbd> clear.</p>`,
       blocks: { pop: "Population", cc: "Case-control", seg: "Segregation", dn: "De novo", tipo: "Variant type", fun: "Functional", pred: "Predictors (Supporting only in cardio)", otros: "Other" } },
   };
@@ -524,13 +600,14 @@ if (typeof module !== "undefined") module.exports = ACMGEngine;
     const s = E.score(state);
     $("cls").dataset.c = s.n ? s.cls.id : "none";
     $("cls").textContent = s.n ? s.cls.short : "—";
-    $("pts").textContent = s.standalone.length ? "stand-alone" : `${s.total > 0 ? "+" : ""}${s.total} pts`;
+    $("pts").textContent = s.n ? s.ruleText : "";
+    $("pts").title = `Tavtigian 2020: ${s.total > 0 ? "+" : ""}${s.total} pts → ${s.ptsCls.short}`;
     const variant = $("variant").value;
     $("outShort").value = s.n ? E.format(state, { variant }) : "";
     $("outShort").placeholder = T().outPh;
     $("outLong").value = s.n ? E.format(state, { style: "long", variant }) : "";
     const cP = s.counts.P, cB = s.counts.B;
-    $("tally").innerHTML = `<span></span><span class="h">VS/SA</span><span class="h">Str</span><span class="h">Mod</span><span class="h">Sup</span><span class="h tot">pts</span>`
+    $("tally").innerHTML = `<span></span><span class="h">VS/SA</span><span class="h">Str</span><span class="h">Mod</span><span class="h">Sup</span><span class="h tot">${T().ptsRef}</span>`
       + `<span class="h">${T().path}</span><span>${cP.VS}</span><span>${cP.S}</span><span>${cP.M}</span><span>${cP.P}</span><span class="tot">+${s.pPts}</span>`
       + `<span class="h">${T().ben}</span><span>${cB.SA}</span><span>${cB.S}</span><span>${cB.M}</span><span>${cB.P}</span><span class="tot">${s.bPts}</span>`;
     const segs = [["B", -10, -7, "var(--bsa)", "var(--bsa-fg)"], ["LB", -6, -1, "var(--bmo)", "var(--bmo-fg)"], ["VUS", 0, 3, "var(--off)", "var(--fg)"], ["Hot", 4, 5, "var(--mo)", "var(--mo-fg)"], ["LP", 6, 9, "#d9822b", "#fff"], ["P", 10, 12, "var(--bad)", "#fff"]];
